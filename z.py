@@ -160,6 +160,7 @@ def generate_response(prompt):
         )
     }
 
+    # Add a variety of responses for better understanding
     response = help_responses.get(prompt, 
     "I didn’t understand your question. You can type:\n- Scrape Reviews\n- Upload Dataset\n- Text Analysis\n- Getting Started\n\n"
     "Or type 'help' for options and guidance.")
@@ -250,7 +251,6 @@ def translate_text(text):
         return text
 
 def clean_text(text):
-    text = re.sub(r'(?i)(read more)', '', text)  # Remove "read more" text
     text = re.sub(r'[^\w\s]', '', text)
     text = re.sub(r'\s+', ' ', text).strip()
     return text
@@ -279,11 +279,12 @@ def single_page_scrape(url, page_number, encountered_reviews):
             review_title = box.select_one('[data-hook="review-title"]').text.strip() if box.select_one('[data-hook="review-title"]') else 'N/A'
             review_description = box.select_one('[data-hook="review-body"]').text.strip() if box.select_one('[data-hook="review-body"]') else 'N/A'
             
+            # Use title and description or unique identifier to check for duplicates
             identifier = f"{review_title}_{review_description}"
             if identifier in encountered_reviews:
                 continue  # Skip duplicate review
             
-            encountered_reviews.add(identifier)
+            encountered_reviews.add(identifier)  # Mark this review as seen
 
             review = {
                 'Name': box.select_one('[class="a-profile-name"]').text if box.select_one('[class="a-profile-name"]') else 'N/A',
@@ -325,7 +326,7 @@ def preprocess_text(text):
     text = emoji.demojize(text)
     text = clean_text(text)
     tokens = word_tokenize(text.lower())
-    cleaned_tokens = [lem.lemmatize(token) for token in tokens if token not in STOPWORDS]
+    cleaned_tokens = [lem.lemmatize(token) for token in tokens if token not in stopwords.words('english')]
     return ' '.join(cleaned_tokens)
 
 analyzer = SentimentIntensityAnalyzer()
@@ -511,7 +512,6 @@ if st.session_state.page == "Scrape Reviews":
             with st.spinner('SCRAPING DATA...'):
                 scraped_reviews = scrape_reviews(url_input, pages_input)
             st.success("DATA SCRAPING COMPLETE!")
-            st.write(f"Total reviews scraped: {len(scraped_reviews)}")  # Shows number of reviews
 
             df_reviews = pd.DataFrame(scraped_reviews)
             st.write("### SCRAPED REVIEWS")
@@ -539,12 +539,6 @@ if st.session_state.page == "Scrape Reviews":
                                                                        else 'yellow'
                                                                        for sentiment in sentiment_counts_df['Sentiment']]))])
                 st.plotly_chart(fig_pie)
-
-                # Change the bar chart to a line chart for visualization
-                st.write("### Line Chart of Sentiment Counts Over Reviews")
-                sentiment_trend = df_reviews.groupby(['Sentiment']).size().reset_index(name='Counts')
-                fig_line = px.line(sentiment_trend, x='Sentiment', y='Counts', title='Line Chart of Sentiment Counts', markers=True)
-                st.plotly_chart(fig_line)
 
                 positive_reviews_text = ' '.join(df_reviews[df_reviews['Sentiment'] == 'Positive']['Description'])
                 negative_reviews_text = ' '.join(df_reviews[df_reviews['Sentiment'] == 'Negative']['Description'])
@@ -576,6 +570,18 @@ if st.session_state.page == "Scrape Reviews":
                             plt.close()
                         else:
                             st.write("*No negative reviews available to generate a word cloud.*")
+
+                st.write("### Bar Chart of Ratings by Sentiment")
+                rating_count = df_reviews.groupby(['Sentiment', 'Rating']).size().reset_index(name='Counts')
+                fig_bar = px.bar(rating_count, x='Rating', y='Counts', color='Sentiment', barmode='group',
+                                 title='Bar Chart of Ratings by Sentiment', 
+                                 color_discrete_map={
+                                     'Positive': 'green',
+                                     'Negative': 'red',
+                                     'Neutral': 'yellow'
+                                 },
+                                 labels={'Counts': 'Number of Reviews', 'Rating': 'Rating'})
+                st.plotly_chart(fig_bar)
 
                 insights = generate_insights(df_reviews)
                 st.write("### INSIGHTS")
