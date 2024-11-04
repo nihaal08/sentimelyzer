@@ -21,7 +21,6 @@ from googletrans import Translator
 # Set up Streamlit page layout
 st.set_page_config(layout="wide")
 nltk.download('punkt', quiet=True)
-nltk.download('punkt_tab', quiet=True)
 nltk.download('stopwords', quiet=True)
 nltk.download('wordnet', quiet=True)
 nltk.download('vader_lexicon', quiet=True)
@@ -64,8 +63,6 @@ def load_css():
                 background-color: lightgreen;
                 color: black;
             }
-
-            
         </style>
         """,
         unsafe_allow_html=True
@@ -105,7 +102,7 @@ def chat_and_help_section():
 
 # Extend the generate_response function
 def generate_response(prompt):
-    prompt = prompt.lower()  # Normalize input
+    prompt = prompt.lower()  
     help_responses = {
         'scrape reviews': (
             "### Scrape Reviews\n"
@@ -267,10 +264,16 @@ def single_page_scrape(url, page_number, encountered_reviews):
         boxes = soup.select('div[data-hook="review"]')
         
         for box in boxes:
+            # Updated title extraction to remove rating information
             review_title = box.select_one('[data-hook="review-title"]').text.strip() if box.select_one('[data-hook="review-title"]') else 'N/A'
+            # Remove '4.0 out of 5.0' style rating from title
+            review_title = re.sub(r'\d+(\.\d+)? out of 5\.0', '', review_title).strip()
+
             review_description = box.select_one('[data-hook="review-body"]').text.strip() if box.select_one('[data-hook="review-body"]') else 'N/A'
-            
-            # Use title and description or unique identifier to check for duplicates
+            # Remove 'Read more' or similar phrases from description
+            review_description = review_description.replace("Read more", "").strip()
+
+            # Use the title and description or unique identifier to check for duplicates
             identifier = f"{review_title}_{review_description}"
             if identifier in encountered_reviews:
                 continue  # Skip duplicate review
@@ -280,8 +283,8 @@ def single_page_scrape(url, page_number, encountered_reviews):
             review = {
                 'Name': box.select_one('[class="a-profile-name"]').text if box.select_one('[class="a-profile-name"]') else 'N/A',
                 'Rating': box.select_one('[data-hook="review-star-rating"]').text.split(' out')[0] if box.select_one('[data-hook="review-star-rating"]') else 'N/A',
-                'Title': review_title,
-                'Description': review_description,
+                'Title': review_title,  # Updated title
+                'Description': review_description,  # Updated description
             }
             
             review['Description'] = clean_text(review['Description'])
@@ -462,7 +465,7 @@ def display_navbar():
     if st.sidebar.button("History", key="history_button"):
         st.session_state.page = "History"
     if st.sidebar.button("Support", key="support_button"):
-        st.session_state.page = "Support"  # Combined option for Chat & Help and Tutorial
+        st.session_state.page = "Support"
 
 display_navbar()
 
