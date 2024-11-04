@@ -21,10 +21,10 @@ from googletrans import Translator
 # Set up Streamlit page layout
 st.set_page_config(layout="wide")
 nltk.download('punkt', quiet=True)
+nltk.download('punkt_tab', quiet=True)
 nltk.download('stopwords', quiet=True)
 nltk.download('wordnet', quiet=True)
 nltk.download('vader_lexicon', quiet=True)
-
 try:
     STOPWORDS = set(stopwords.words('english'))
 except Exception as e:
@@ -40,6 +40,7 @@ def load_css():
                 color: green;               
                 font-family: Arial, sans-serif;
             }
+            
             h1, h2, h3, h4, h5, h6 {
                 color: green;               
                 text-transform: uppercase; 
@@ -63,6 +64,8 @@ def load_css():
                 background-color: lightgreen;
                 color: black;
             }
+
+            
         </style>
         """,
         unsafe_allow_html=True
@@ -184,18 +187,6 @@ def initialize_scraped_database():
     ''')
     conn.commit()
     conn.close()
-
-def drop_scraped_database():
-    try:
-        conn = sqlite3.connect('scraped_sentiment_analysis.db')
-        cursor = conn.cursor()
-        cursor.execute('DROP TABLE IF EXISTS scraped_reviews')
-        conn.commit()
-        print("Dropped scraped_reviews table successfully.")
-    except Exception as e:
-        print(f"Error dropping scraped_reviews table: {e}")
-    finally:
-        conn.close()
 
 def initialize_uploaded_database():
     conn = sqlite3.connect('uploaded_sentiment_analysis.db')
@@ -478,6 +469,7 @@ display_navbar()
 if st.session_state.page == "Home":
     st.title("WELCOME TO THE SENTIMENT ANALYSIS DASHBOARD!")
 
+    # Updated content for the home page
     st.markdown("""
         ### Analyze Amazon Product Reviews Effortlessly!
         This interactive dashboard is designed to help you scrape, analyze, and visualize Amazon reviews for effective sentiment analysis.
@@ -497,6 +489,7 @@ if st.session_state.page == "Home":
 
 # Interactive Tutorial Page
 if st.session_state.page == "Support":
+    # Show both tutorial and chat functionality here
     show_tutorial()
     st.write("---")
     chat_and_help_section()
@@ -523,6 +516,7 @@ if st.session_state.page == "Scrape Reviews":
                                           row['Description'], row['Sentiment'], 
                                           row['Translated_Description'])
 
+                # Export functionality
                 export_to_csv(df_reviews, "scraped_reviews.csv")
 
                 st.write("### SENTIMENT DISTRIBUTION")
@@ -540,6 +534,7 @@ if st.session_state.page == "Scrape Reviews":
                                                                        for sentiment in sentiment_counts_df['Sentiment']]))])
                 st.plotly_chart(fig_pie)
 
+                # Generate word clouds
                 positive_reviews_text = ' '.join(df_reviews[df_reviews['Sentiment'] == 'Positive']['Description'])
                 negative_reviews_text = ' '.join(df_reviews[df_reviews['Sentiment'] == 'Negative']['Description'])
 
@@ -605,6 +600,7 @@ if st.session_state.page == "Dataset Upload":
                             'HelpfulnessDenominator', 'Score', 'Time', 'Summary', 'Text']
         
         if all(col in data.columns for col in required_columns):
+            # Process the dataset
             data['Processed_Text'] = data['Text'].apply(preprocess_text)
             data['Sentiment'] = data['Processed_Text'].apply(analyze_sentiment)
 
@@ -616,8 +612,10 @@ if st.session_state.page == "Dataset Upload":
 
             st.success("DATA UPLOADED AND INSERTED INTO OUTPUT DATABASE!")
 
+            # Export functionality
             export_to_csv(data, "uploaded_reviews.csv")
 
+            # Check if data was successfully uploaded to the output database
             uploaded_reviews = fetch_all_reviews('output_reviews')
             if uploaded_reviews:
                 st.write("### REVIEW RECORDS IN OUTPUT DATABASE:")
@@ -760,7 +758,6 @@ if st.session_state.page == "Fake Review Detection":
             st.write("*UPLOADED CSV MUST CONTAIN THE FOLLOWING COLUMNS: category, rating, label, text_*")
 
 # Initialize the databases
-drop_scraped_database()  # Drop the table if it exists
-initialize_scraped_database()  # Create the table with the correct schema
+initialize_scraped_database()
 initialize_uploaded_database()
 initialize_uploaded_output_database()
