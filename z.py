@@ -21,6 +21,7 @@ from googletrans import Translator
 # Set up Streamlit page layout
 st.set_page_config(layout="wide")
 nltk.download('punkt', quiet=True)
+nltk.download('punkt_tab', quiet=True)
 nltk.download('stopwords', quiet=True)
 nltk.download('wordnet', quiet=True)
 nltk.download('vader_lexicon', quiet=True)
@@ -63,6 +64,8 @@ def load_css():
                 background-color: lightgreen;
                 color: black;
             }
+
+            
         </style>
         """,
         unsafe_allow_html=True
@@ -264,13 +267,8 @@ def single_page_scrape(url, page_number, encountered_reviews):
         boxes = soup.select('div[data-hook="review"]')
         
         for box in boxes:
-            review_title = box.select_one('[data-hook="review-title"]').text.strip()
-            # Remove the rating from the title (e.g., "X out of Y")
-            review_title = re.sub(r'\d+(\.\d+)? out of \d+', '', review_title).strip()  # This will remove "4.0 out of 5"
-
-            review_description = box.select_one('[data-hook="review-body"]').text.strip()
-            # Remove the "Read more" text if present
-            review_description = review_description.replace("Read more", "").strip()
+            review_title = box.select_one('[data-hook="review-title"]').text.strip() if box.select_one('[data-hook="review-title"]') else 'N/A'
+            review_description = box.select_one('[data-hook="review-body"]').text.strip() if box.select_one('[data-hook="review-body"]') else 'N/A'
             
             # Use title and description or unique identifier to check for duplicates
             identifier = f"{review_title}_{review_description}"
@@ -319,7 +317,7 @@ def preprocess_text(text):
     text = emoji.demojize(text)
     text = clean_text(text)
     tokens = word_tokenize(text.lower())
-    cleaned_tokens = [lem.lemmatize(token) for token in tokens if token not in STOPWORDS]
+    cleaned_tokens = [lem.lemmatize(token) for token in tokens if token not in stopwords.words('english')]
     return ' '.join(cleaned_tokens)
 
 analyzer = SentimentIntensityAnalyzer()
