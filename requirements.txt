@@ -6,7 +6,7 @@ emoji
 nltk
 matplotlib
 plotly
-concurrent.futures  # Standard library module, generally not needed in requirements.txt
+
 wordcloud
 googletrans==4.0.0-rc1  # Translator module may need googletrans==4.0.0-rc1
 lxml
