@@ -24,6 +24,11 @@ nltk.download('punkt', quiet=True)
 nltk.download('stopwords', quiet=True)
 nltk.download('wordnet', quiet=True)
 nltk.download('vader_lexicon', quiet=True)
+try:
+    STOPWORDS = set(stopwords.words('english'))
+except Exception as e:
+    st.error(f"Error loading stopwords: {e}")
+    STOPWORDS = set()
 
 # Load CSS for styling
 def load_css():
