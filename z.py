@@ -25,11 +25,7 @@ nltk.download('stopwords', quiet=True)
 nltk.download('wordnet', quiet=True)
 nltk.download('vader_lexicon', quiet=True)
 
-try:
-    STOPWORDS = set(stopwords.words('english'))
-except Exception as e:
-    st.error(f"Error loading stopwords: {e}")
-    STOPWORDS = set()
+STOPWORDS = set(stopwords.words('english'))
 
 # Load CSS for styling
 def load_css():
@@ -250,7 +246,6 @@ def translate_text(text):
         return text
 
 def clean_text(text):
-    text = re.sub(r'(?i)(read more)', '', text)  # Remove "read more" text
     text = re.sub(r'[^\w\s]', '', text)
     text = re.sub(r'\s+', ' ', text).strip()
     return text
@@ -279,11 +274,12 @@ def single_page_scrape(url, page_number, encountered_reviews):
             review_title = box.select_one('[data-hook="review-title"]').text.strip() if box.select_one('[data-hook="review-title"]') else 'N/A'
             review_description = box.select_one('[data-hook="review-body"]').text.strip() if box.select_one('[data-hook="review-body"]') else 'N/A'
             
+            # Use title and description or unique identifier to check for duplicates
             identifier = f"{review_title}_{review_description}"
             if identifier in encountered_reviews:
                 continue  # Skip duplicate review
             
-            encountered_reviews.add(identifier)
+            encountered_reviews.add(identifier)  # Mark this review as seen
 
             review = {
                 'Name': box.select_one('[class="a-profile-name"]').text if box.select_one('[class="a-profile-name"]') else 'N/A',
@@ -331,7 +327,7 @@ def preprocess_text(text):
 analyzer = SentimentIntensityAnalyzer()
 
 def analyze_sentiment(text):
-    negations = ['not', 'no', 'never', 'without', 'barely']
+    negations = ['not', 'no', 'never', 'without']
     sentences = nltk.tokenize.sent_tokenize(text)
 
     overall_sentiment = 0
@@ -393,13 +389,8 @@ def insert_uploaded_output_review(product_id, user_id, profile_name, helpfulness
         conn.close()
 
 def fetch_all_reviews(table_name):
-    if 'scraped' in table_name:
-        db_name = 'scraped_sentiment_analysis.db'
-    else:
-        db_name = 'uploaded_output_analysis.db'
-
     try:
-        conn = sqlite3.connect(db_name)
+        conn = sqlite3.connect('scraped_sentiment_analysis.db' if 'scraped' in table_name else 'uploaded_output_analysis.db')
         cursor = conn.cursor()
         cursor.execute(f'SELECT * FROM {table_name}')
         data = cursor.fetchall()
@@ -444,8 +435,8 @@ def show_tutorial():
     Welcome to the Sentiment Analysis Dashboard! Here’s how to get started:
     - **Home**: Overview of functionalities and quick insights.
     - **Scrape Reviews**: Collect Amazon product reviews with ease.
-    - **Upload Dataset**: Analyze your own CSV files for sentiment.
-    - **Text Analysis**: Input custom text to understand sentiment.
+    - **Upload Your Datasets**: Analyze reviews on the go.
+    - **Analyze Custom Text**: Input custom text to understand sentiment.
     - **Fake Review Detection**: Identify potentially fake reviews from your dataset.
     - **History**: View past analyses and results for comparison.
     
@@ -521,6 +512,7 @@ if st.session_state.page == "Scrape Reviews":
                     insert_scraped_review(row['Name'], row['Rating'], row['Title'], 
                                           row['Description'], row['Sentiment'], 
                                           row['Translated_Description'])
+                    st.write(f"Inserted review for: {row['Name']}")  # Debug logging
 
                 export_to_csv(df_reviews, "scraped_reviews.csv")
 
@@ -538,12 +530,6 @@ if st.session_state.page == "Scrape Reviews":
                                                                        else 'yellow'
                                                                        for sentiment in sentiment_counts_df['Sentiment']]))])
                 st.plotly_chart(fig_pie)
-
-                # Change the bar chart to a line chart for visualization
-                st.write("### Line Chart of Sentiment Counts Over Reviews")
-                sentiment_trend = df_reviews.groupby(['Sentiment']).size().reset_index(name='Counts')
-                fig_line = px.line(sentiment_trend, x='Sentiment', y='Counts', title='Line Chart of Sentiment Counts', markers=True)
-                st.plotly_chart(fig_line)
 
                 positive_reviews_text = ' '.join(df_reviews[df_reviews['Sentiment'] == 'Positive']['Description'])
                 negative_reviews_text = ' '.join(df_reviews[df_reviews['Sentiment'] == 'Negative']['Description'])
@@ -575,6 +561,18 @@ if st.session_state.page == "Scrape Reviews":
                             plt.close()
                         else:
                             st.write("*No negative reviews available to generate a word cloud.*")
+
+                st.write("### Bar Chart of Ratings by Sentiment")
+                rating_count = df_reviews.groupby(['Sentiment', 'Rating']).size().reset_index(name='Counts')
+                fig_bar = px.bar(rating_count, x='Rating', y='Counts', color='Sentiment', barmode='group',
+                                 title='Bar Chart of Ratings by Sentiment', 
+                                 color_discrete_map={
+                                     'Positive': 'green',
+                                     'Negative': 'red',
+                                     'Neutral': 'yellow'
+                                 },
+                                 labels={'Counts': 'Number of Reviews', 'Rating': 'Rating'})
+                st.plotly_chart(fig_bar)
 
                 insights = generate_insights(df_reviews)
                 st.write("### INSIGHTS")
