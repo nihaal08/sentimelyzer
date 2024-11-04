@@ -177,11 +177,10 @@ def initialize_scraped_database():
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS scraped_reviews (
             id INTEGER PRIMARY KEY,
-            title TEXT,
-            price TEXT,
+            name TEXT,
             rating TEXT,
-            review_count TEXT,
-            availability TEXT,
+            title TEXT,
+            description TEXT,
             sentiment TEXT, 
             translated_description TEXT  
         )
