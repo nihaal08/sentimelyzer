@@ -265,9 +265,9 @@ def single_page_scrape(url, page_number, encountered_reviews):
         
         for box in boxes:
             review_title = box.select_one('[data-hook="review-title"]').text.strip()
-            # Remove the rating from the title
-            review_title = re.sub(r'Rating.*', '', review_title)  # This will remove 'Rating X out of Y'
-            
+            # Remove the rating from the title (e.g., "X out of Y")
+            review_title = re.sub(r'\d+(\.\d+)? out of \d+', '', review_title).strip()  # This will remove "4.0 out of 5"
+
             review_description = box.select_one('[data-hook="review-body"]').text.strip()
             # Remove the "Read more" text if present
             review_description = review_description.replace("Read more", "").strip()
