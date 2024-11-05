@@ -274,8 +274,8 @@ def single_page_scrape(url, page_number, encountered_reviews):
             encountered_reviews.add(identifier)  # Mark this review as seen
 
             review = {
-                'Name': box.select_one('.a-profile-name').text if box.select_one('.a-profile-name') else 'N/A',
-                'Rating': box.select_one('.review-star-rating').text.split(' out')[0] if box.select_one('.review-star-rating') else 'N/A',
+                'Name': box.select_one('[class="a-profile-name"]').text if box.select_one('[class="a-profile-name"]') else 'N/A',
+                'Rating': box.select_one('[data-hook="review-star-rating"]').text.split(' out')[0] if box.select_one('[data-hook="review-star-rating"]') else 'N/A',
                 'Title': review_title,
                 'Description': review_description,
             }
@@ -432,8 +432,8 @@ def show_tutorial():
     Welcome to the Sentiment Analysis Dashboard! Here’s how to get started:
     - **Home**: Overview of functionalities and quick insights.
     - **Scrape Reviews**: Collect Amazon product reviews with ease.
-    - **Upload Your Datasets**: Analyze your own CSV files for sentiment.
-    - **Analyze Custom Text**: Input custom text to understand sentiment.
+    - **Upload Dataset**: Analyze your own CSV files for sentiment.
+    - **Text Analysis**: Input custom text to understand sentiment.
     - **Fake Review Detection**: Identify potentially fake reviews from your dataset.
     - **History**: View past analyses and results for comparison.
     
