@@ -263,10 +263,10 @@ def single_page_scrape(url, page_number, encountered_reviews):
             review_title = box.select_one('[data-hook="review-title"]').text.strip() if box.select_one('[data-hook="review-title"]') else 'N/A'
             review_description = box.select_one('[data-hook="review-body"]').text.strip() if box.select_one('[data-hook="review-body"]') else 'N/A'
             
-            # Remove rating from title
-            review_title = re.sub(r'\d+\.\d+ out of \d+ stars ', '', review_title)
+            # Remove any patterns like "X.X out of Y stars"
+            review_title = re.sub(r'\b\d+\.\d+\s+out of\s+\d+\s+stars\b', '', review_title, flags=re.IGNORECASE).strip()
 
-            # Use title and description or unique identifier to check for duplicates
+            # Unique identifier to check for duplicates
             identifier = f"{review_title}_{review_description}"
             if identifier in encountered_reviews:
                 continue  # Skip duplicate review
