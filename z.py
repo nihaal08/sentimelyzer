@@ -21,15 +21,10 @@ from googletrans import Translator
 # Set up Streamlit page layout
 st.set_page_config(layout="wide")
 nltk.download('punkt', quiet=True)
-nltk.download('punkt_tab', quiet=True)
 nltk.download('stopwords', quiet=True)
 nltk.download('wordnet', quiet=True)
 nltk.download('vader_lexicon', quiet=True)
-try:
-    STOPWORDS = set(stopwords.words('english'))
-except Exception as e:
-    st.error(f"Error loading stopwords: {e}")
-    STOPWORDS = set()
+STOPWORDS = set(stopwords.words('english'))
 
 # Load CSS for styling
 def load_css():
@@ -64,8 +59,6 @@ def load_css():
                 background-color: lightgreen;
                 color: black;
             }
-
-            
         </style>
         """,
         unsafe_allow_html=True
@@ -270,6 +263,9 @@ def single_page_scrape(url, page_number, encountered_reviews):
             review_title = box.select_one('[data-hook="review-title"]').text.strip() if box.select_one('[data-hook="review-title"]') else 'N/A'
             review_description = box.select_one('[data-hook="review-body"]').text.strip() if box.select_one('[data-hook="review-body"]') else 'N/A'
             
+            # Remove rating from title
+            review_title = re.sub(r'\d+\.\d+ out of \d+ stars ', '', review_title)
+
             # Use title and description or unique identifier to check for duplicates
             identifier = f"{review_title}_{review_description}"
             if identifier in encountered_reviews:
@@ -297,11 +293,11 @@ def single_page_scrape(url, page_number, encountered_reviews):
 def scrape_reviews(url, pages):
     reviews = []
     encountered_reviews = set()  # Set to track unique reviews
-    with ThreadPoolExecutor() as executor:
+    with ThreadPoolExecutor(max_workers=5) as executor:  # Increased concurrency
         futures = []
         for page_number in range(1, pages + 1):
             futures.append(executor.submit(single_page_scrape, url, page_number, encountered_reviews))
-            time.sleep(1)
+            time.sleep(1)  # Adjust sleep time carefully based on server behavior
 
         for future in futures:
             reviews.extend(future.result())
