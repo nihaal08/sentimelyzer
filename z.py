@@ -447,12 +447,12 @@ def display_navbar():
     st.sidebar.image('LOGO.png', use_column_width=True)
     if st.sidebar.button("Home", key="home_button"):
         st.session_state.page = "Home"
-    if st.sidebar.button("Scrape Reviews", key="scrape_reviews_button"):
-        st.session_state.page = "Scrape Reviews"
-    if st.sidebar.button("Upload Dataset", key="dataset_upload_button"):
-        st.session_state.page = "Dataset Upload"
     if st.sidebar.button("Text Analysis", key="text_analysis_button"):
         st.session_state.page = "Text Analysis"
+    if st.sidebar.button("Upload Dataset", key="dataset_upload_button"):
+        st.session_state.page = "Dataset Upload"
+    if st.sidebar.button("Scrape Reviews", key="scrape_reviews_button"):
+        st.session_state.page = "Scrape Reviews"
     if st.sidebar.button("Fake Review Detection", key="fake_review_button"):
         st.session_state.page = "Fake Review Detection"
     if st.sidebar.button("History", key="history_button"):
