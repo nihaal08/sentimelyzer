@@ -14,28 +14,27 @@ import plotly.graph_objects as go
 import sqlite3
 import nltk
 from concurrent.futures import ThreadPoolExecutor
-import time
 from wordcloud import WordCloud
 from googletrans import Translator
+import asyncio
 
-# Set up Streamlit page layout
+# Setup Streamlit page layout
 st.set_page_config(layout="wide")
 nltk.download('punkt', quiet=True)
 nltk.download('stopwords', quiet=True)
 nltk.download('wordnet', quiet=True)
 nltk.download('vader_lexicon', quiet=True)
+
 STOPWORDS = set(stopwords.words('english'))
 
 # Load CSS for styling
 def load_css():
-    st.markdown(
-        """
+    st.markdown("""
         <style>
             body {
                 color: green;               
                 font-family: Arial, sans-serif;
             }
-            
             h1, h2, h3, h4, h5, h6 {
                 color: green;               
                 text-transform: uppercase; 
@@ -60,21 +59,37 @@ def load_css():
                 color: black;
             }
         </style>
-        """,
-        unsafe_allow_html=True
-    )
+    """, unsafe_allow_html=True)
 
 load_css()
 
-# Initialize the message state for chat
+# Initialize session state
 if "messages" not in st.session_state:
     st.session_state.messages = []
-
-# Initialize the page state
 if 'page' not in st.session_state:
     st.session_state.page = "Home"
 
-# Chat and Help Section
+# Preprocessing Text Function
+def preprocess_text(text):
+    """ Preprocesses the given text by demojizing, cleaning, and tokenizing."""
+    text = emoji.demojize(text)  # Convert emojis to text
+    text = clean_text(text)  # Clean the text
+    tokens = word_tokenize(text.lower())  # Tokenize and lowercase
+    lem = WordNetLemmatizer()  # Initialize lemmatizer
+    cleaned_tokens = [lem.lemmatize(token) for token in tokens if token not in STOPWORDS]
+    return ' '.join(cleaned_tokens)  # Return cleaned tokens as a single string
+
+def clean_text(text):
+    """Cleans input text by removing unwanted characters."""
+    text = re.sub(r'[^\w\s]', '', text)
+    return re.sub(r'\s+', ' ', text).strip()
+def filter_unwanted_comments(reviews, unwanted_keywords):
+    """Filters out reviews containing unwanted keywords."""
+    filtered_reviews = []
+    for review in reviews:
+        if not any(keyword.lower() in review['Description'].lower() for keyword in unwanted_keywords):
+            filtered_reviews.append(review)
+    return filtered_reviews
 def chat_and_help_section():
     st.title("Chat & Help Assistant")
 
@@ -96,7 +111,6 @@ def chat_and_help_section():
 
         st.session_state.messages.append({"role": "assistant", "content": response})
 
-# Extend the generate_response function
 def generate_response(prompt):
     prompt = prompt.lower()  # Normalize input
     help_responses = {
@@ -111,7 +125,7 @@ def generate_response(prompt):
         'upload dataset': (
             "### Upload Dataset\n"
             "To upload a CSV dataset:\n"
-            "1. Ensure it contains these columns: Id, ProductId, UserId, ProfileName, HelpfulnessNumerator, "
+            "1. Ensure it contains the following columns: Id, ProductId, UserId, ProfileName, HelpfulnessNumerator, "
             "HelpfulnessDenominator, Score, Time, Summary, Text.\n"
             "2. Click 'UPLOAD DATASET' to analyze your reviews."
         ),
@@ -148,82 +162,86 @@ def generate_response(prompt):
         ),
         'tutorial': (
             "### Interactive Tutorial\n"
-            "This dashboard offers functionalities like:\n"
-            "1. Scraping reviews\n"
-            "2. Uploading datasets\n"
-            "3. Analyzing custom text\n"
+            "This dashboard includes functionalities like:\n"
+            "1. Scraping reviews.\n"
+            "2. Uploading datasets.\n"
+            "3. Analyzing custom text.\n"
             "Feel free to navigate through the sidebar for access to various sections."
         )
     }
 
-    # Add a variety of responses for better understanding
     response = help_responses.get(prompt, 
     "I didn’t understand your question. You can type:\n- Scrape Reviews\n- Upload Dataset\n- Text Analysis\n- Getting Started\n\n"
     "Or type 'help' for options and guidance.")
 
     return response
 
-# Database and Helper Functions
-def initialize_scraped_database():
-    conn = sqlite3.connect('scraped_sentiment_analysis.db')
-    cursor = conn.cursor()
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS scraped_reviews (
-            id INTEGER PRIMARY KEY,
-            name TEXT,
-            rating TEXT,
-            title TEXT,
-            description TEXT,
-            sentiment TEXT, 
-            translated_description TEXT  
-        )
-    ''')
-    conn.commit()
-    conn.close()
+def initialize_database(db_name, create_statement):
+    try:
+        conn = sqlite3.connect(db_name)
+        cursor = conn.cursor()
+        cursor.execute(create_statement)
+        conn.commit()
+    except Exception as e:
+        st.error(f"Error initializing database {db_name}: {e}")
+    finally:
+        conn.close()
 
-def initialize_uploaded_database():
-    conn = sqlite3.connect('uploaded_sentiment_analysis.db')
-    cursor = conn.cursor()
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS uploaded_reviews (
-            id INTEGER PRIMARY KEY,
-            product_id TEXT,
-            user_id TEXT,
-            profile_name TEXT,
-            helpfulness_numerator INTEGER,
-            helpfulness_denominator INTEGER,
-            score INTEGER,
-            time INTEGER,
-            summary TEXT,
-            text TEXT,
-            processed_text TEXT,
-            sentiment TEXT
-        )
-    ''')
-    conn.commit()
-    conn.close()
+# Table creation statements
+initialize_database(
+    'scraped_sentiment_analysis.db',
+    '''
+    CREATE TABLE IF NOT EXISTS scraped_reviews (
+        id INTEGER PRIMARY KEY,
+        name TEXT,
+        rating TEXT,
+        title TEXT,
+        description TEXT,
+        sentiment TEXT, 
+        translated_description TEXT  
+    )
+    '''
+)
 
-def initialize_uploaded_output_database():
-    conn = sqlite3.connect('uploaded_output_analysis.db')
-    cursor = conn.cursor()
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS output_reviews (
-            id INTEGER PRIMARY KEY,
-            product_id TEXT,
-            user_id TEXT,
-            profile_name TEXT,
-            helpfulness_numerator INTEGER,
-            helpfulness_denominator INTEGER,
-            score INTEGER,
-            time INTEGER,
-            summary TEXT,
-            text TEXT,
-            processed_text TEXT,
-            sentiment TEXT
-        )
-    ''')
-    conn.commit()
-    conn.close()
+initialize_database(
+    'uploaded_sentiment_analysis.db',
+    '''
+    CREATE TABLE IF NOT EXISTS uploaded_reviews (
+        id INTEGER PRIMARY KEY,
+        product_id TEXT,
+        user_id TEXT,
+        profile_name TEXT,
+        helpfulness_numerator INTEGER,
+        helpfulness_denominator INTEGER,
+        score INTEGER,
+        time INTEGER,
+        summary TEXT,
+        text TEXT,
+        processed_text TEXT,
+        sentiment TEXT
+    )
+    '''
+)
+
+initialize_database(
+    'uploaded_output_analysis.db',
+    '''
+    CREATE TABLE IF NOT EXISTS output_reviews (
+        id INTEGER PRIMARY KEY,
+        product_id TEXT,
+        user_id TEXT,
+        profile_name TEXT,
+        helpfulness_numerator INTEGER,
+        helpfulness_denominator INTEGER,
+        score INTEGER,
+        time INTEGER,
+        summary TEXT,
+        text TEXT,
+        processed_text TEXT,
+        sentiment TEXT
+    )
+    '''
+)
 
 def translate_text(text):
     translator = Translator()
@@ -234,53 +252,35 @@ def translate_text(text):
         st.error(f"Translation Error: {e}")
         return text
 
-def clean_text(text):
-    text = re.sub(r'[^\w\s]', '', text)
-    text = re.sub(r'\s+', ' ', text).strip()
-    return text
-
-def filter_unwanted_comments(reviews, unwanted_keywords):
-    filtered_reviews = []
-    for review in reviews:
-        if not any(keyword.lower() in review['Description'].lower() for keyword in unwanted_keywords):
-            filtered_reviews.append(review)
-    return filtered_reviews
-
 def get_request_headers():
     return {
         'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/102.0.0.0 Safari/537.36'
     }
 
-def single_page_scrape(url, page_number, encountered_reviews):
+async def single_page_scrape(url, page_number, encountered_reviews):
     reviews = []
     try:
         response = requests.get(f"{url}&pageNumber={page_number}", headers=get_request_headers())
         response.raise_for_status()
         soup = BeautifulSoup(response.text, 'html.parser')
         boxes = soup.select('div[data-hook="review"]')
-        
+
         for box in boxes:
             review_title = box.select_one('[data-hook="review-title"]').text.strip() if box.select_one('[data-hook="review-title"]') else 'N/A'
             review_description = box.select_one('[data-hook="review-body"]').text.strip() if box.select_one('[data-hook="review-body"]') else 'N/A'
-            
-            # Remove any patterns like "X.X out of Y stars"
             review_title = re.sub(r'\b\d+\.\d+\s+out of\s+\d+\s+stars\b', '', review_title, flags=re.IGNORECASE).strip()
-
-            # Unique identifier to check for duplicates
             identifier = f"{review_title}_{review_description}"
+
             if identifier in encountered_reviews:
-                continue  # Skip duplicate review
-            
-            encountered_reviews.add(identifier)  # Mark this review as seen
+                continue
+            encountered_reviews.add(identifier)
 
             review = {
                 'Name': box.select_one('[class="a-profile-name"]').text if box.select_one('[class="a-profile-name"]') else 'N/A',
                 'Rating': box.select_one('[data-hook="review-star-rating"]').text.split(' out')[0] if box.select_one('[data-hook="review-star-rating"]') else 'N/A',
                 'Title': review_title,
-                'Description': review_description,
+                'Description': clean_text(review_description),
             }
-            
-            review['Description'] = clean_text(review['Description'])
             review['Translated_Description'] = translate_text(review['Description'])
             review['Sentiment'] = analyze_sentiment(review['Translated_Description'])
 
@@ -289,36 +289,23 @@ def single_page_scrape(url, page_number, encountered_reviews):
         st.error(f"Error on page {page_number}: {e}")
     return reviews
 
-@st.cache_data(show_spinner=False)
-def scrape_reviews(url, pages):
+async def scrape_reviews(url, pages):
     reviews = []
-    encountered_reviews = set()  # Set to track unique reviews
-    with ThreadPoolExecutor(max_workers=5) as executor:  # Increased concurrency
-        futures = []
-        for page_number in range(1, pages + 1):
-            futures.append(executor.submit(single_page_scrape, url, page_number, encountered_reviews))
-            time.sleep(1)  # Adjust sleep time carefully based on server behavior
+    encountered_reviews = set()
+    tasks = []
 
-        for future in futures:
-            reviews.extend(future.result())
+    for page_number in range(1, pages + 1):
+        tasks.append(single_page_scrape(url, page_number, encountered_reviews))
+
+    responses = await asyncio.gather(*tasks)
+    for response in responses:
+        reviews.extend(response)
 
     unwanted_keywords = ['fake', 'unverified', 'not helpful', 'spam']
-    reviews = filter_unwanted_comments(reviews, unwanted_keywords)
-    return reviews
-
-lem = WordNetLemmatizer()
-
-@st.cache_data(show_spinner=False)
-def preprocess_text(text):
-    text = emoji.demojize(text)
-    text = clean_text(text)
-    tokens = word_tokenize(text.lower())
-    cleaned_tokens = [lem.lemmatize(token) for token in tokens if token not in stopwords.words('english')]
-    return ' '.join(cleaned_tokens)
-
-analyzer = SentimentIntensityAnalyzer()
+    return filter_unwanted_comments(reviews, unwanted_keywords)
 
 def analyze_sentiment(text):
+    analyzer = SentimentIntensityAnalyzer()
     negations = ['not', 'no', 'never', 'without', 'barely']
     sentences = nltk.tokenize.sent_tokenize(text)
 
@@ -398,27 +385,15 @@ def fetch_all_reviews(table_name):
         conn.close()
     return data
 
-def clear_scraped_database():
+def clear_database(db_name):
     try:
-        conn = sqlite3.connect('scraped_sentiment_analysis.db')
+        conn = sqlite3.connect(db_name)
         cursor = conn.cursor()
-        cursor.execute('DELETE FROM scraped_reviews')
+        cursor.execute(f'DELETE FROM {db_name.split(".")[0]}')
         conn.commit()
-        st.success("All scraped reviews have been cleared.")
+        st.success(f"All entries in {db_name.split('.')[0]} have been cleared.")
     except Exception as e:
-        st.error(f"Error clearing scraped database: {e}")
-    finally:
-        conn.close()
-
-def clear_uploaded_output_database():
-    try:
-        conn = sqlite3.connect('uploaded_output_analysis.db')
-        cursor = conn.cursor()
-        cursor.execute('DELETE FROM output_reviews')
-        conn.commit()
-        st.success("All uploaded output reviews have been cleared.")
-    except Exception as e:
-        st.error(f"Error clearing uploaded output database: {e}")
+        st.error(f"Error clearing database: {e}")
     finally:
         conn.close()
 
@@ -458,14 +433,12 @@ def display_navbar():
     if st.sidebar.button("History", key="history_button"):
         st.session_state.page = "History"
     if st.sidebar.button("Support", key="support_button"):
-        st.session_state.page = "Support"  # Combined option for Chat & Help and Tutorial
+        st.session_state.page = "Support"
 
 display_navbar()
 
 if st.session_state.page == "Home":
     st.title("WELCOME TO THE SENTIMENT ANALYSIS DASHBOARD!")
-
-    # Updated content for the home page
     st.markdown("""
         ### Analyze Amazon Product Reviews Effortlessly!
         This interactive dashboard is designed to help you scrape, analyze, and visualize Amazon reviews for effective sentiment analysis.
@@ -483,14 +456,11 @@ if st.session_state.page == "Home":
         Sentiment analysis helps businesses understand customer emotions, enhance product offerings, and improve overall sentiment through constructive feedback.
     """)
 
-# Interactive Tutorial Page
 if st.session_state.page == "Support":
-    # Show both tutorial and chat functionality here
     show_tutorial()
     st.write("---")
     chat_and_help_section()
 
-# Scrape Reviews Section
 if st.session_state.page == "Scrape Reviews":
     st.header("SCRAPE REVIEWS FROM AMAZON")
     url_input = st.text_input("ENTER AMAZON REVIEW URL:")
@@ -499,7 +469,7 @@ if st.session_state.page == "Scrape Reviews":
     if st.button("SCRAPE REVIEWS", key="start_scrape"):
         if url_input:
             with st.spinner('SCRAPING DATA...'):
-                scraped_reviews = scrape_reviews(url_input, pages_input)
+                scraped_reviews = asyncio.run(scrape_reviews(url_input, pages_input))
             st.success("DATA SCRAPING COMPLETE!")
 
             df_reviews = pd.DataFrame(scraped_reviews)
@@ -512,7 +482,6 @@ if st.session_state.page == "Scrape Reviews":
                                           row['Description'], row['Sentiment'], 
                                           row['Translated_Description'])
 
-                # Export functionality
                 export_to_csv(df_reviews, "scraped_reviews.csv")
 
                 st.write("### SENTIMENT DISTRIBUTION")
@@ -530,7 +499,6 @@ if st.session_state.page == "Scrape Reviews":
                                                                        for sentiment in sentiment_counts_df['Sentiment']]))])
                 st.plotly_chart(fig_pie)
 
-                # Generate word clouds
                 positive_reviews_text = ' '.join(df_reviews[df_reviews['Sentiment'] == 'Positive']['Description'])
                 negative_reviews_text = ' '.join(df_reviews[df_reviews['Sentiment'] == 'Negative']['Description'])
 
@@ -578,11 +546,9 @@ if st.session_state.page == "Scrape Reviews":
                 st.write("### INSIGHTS")
                 for insight in insights:
                     st.write(insight)
-                
             else:
                 st.write("*NO REVIEWS FOUND DURING SCRAPING.*")
 
-# Dataset Upload Section
 if st.session_state.page == "Dataset Upload":
     st.header("UPLOAD DATASET")
     uploaded_file = st.file_uploader("CHOOSE A CSV FILE", type="csv")
@@ -592,11 +558,11 @@ if st.session_state.page == "Dataset Upload":
         st.write("### UPLOADED DATA")
         st.write(data)
 
-        required_columns = ['Id', 'ProductId', 'UserId', 'ProfileName', 'HelpfulnessNumerator', 
-                            'HelpfulnessDenominator', 'Score', 'Time', 'Summary', 'Text']
+        required_columns = ['Id', 'ProductId', 'UserId', 'ProfileName', 
+                            'HelpfulnessNumerator', 'HelpfulnessDenominator', 
+                            'Score', 'Time', 'Summary', 'Text']
         
         if all(col in data.columns for col in required_columns):
-            # Process the dataset
             data['Processed_Text'] = data['Text'].apply(preprocess_text)
             data['Sentiment'] = data['Processed_Text'].apply(analyze_sentiment)
 
@@ -608,10 +574,8 @@ if st.session_state.page == "Dataset Upload":
 
             st.success("DATA UPLOADED AND INSERTED INTO OUTPUT DATABASE!")
 
-            # Export functionality
             export_to_csv(data, "uploaded_reviews.csv")
 
-            # Check if data was successfully uploaded to the output database
             uploaded_reviews = fetch_all_reviews('output_reviews')
             if uploaded_reviews:
                 st.write("### REVIEW RECORDS IN OUTPUT DATABASE:")
@@ -653,11 +617,9 @@ if st.session_state.page == "Dataset Upload":
             st.write("### INSIGHTS")
             for insight in insights:
                 st.write(insight)
-
         else:
             st.write("*UPLOADED CSV MUST CONTAIN THE FOLLOWING COLUMNS: Id, ProductId, UserId, ProfileName, HelpfulnessNumerator, HelpfulnessDenominator, Score, Time, Summary, Text.*")
 
-# Text Analysis Section
 if st.session_state.page == "Text Analysis":
     st.header("ANALYZE CUSTOM TEXT")
     user_input_text = st.text_area("ENTER TEXT:")
@@ -683,7 +645,6 @@ if st.session_state.page == "Text Analysis":
             else:
                 st.write("*PLEASE ENTER TEXT TO ANALYZE.*")
 
-# History Section
 if st.session_state.page == "History":
     st.header("History of Reviews")
 
@@ -712,12 +673,11 @@ if st.session_state.page == "History":
         st.write("*NO UPLOADED OUTPUT REVIEWS FOUND.*")
 
     if st.button("Clear Scraped Reviews Database"):
-        clear_scraped_database()
+        clear_database('scraped_sentiment_analysis.db')
 
     if st.button("Clear Uploaded Output Reviews Database"):
-        clear_uploaded_output_database()
+        clear_database('uploaded_output_analysis.db')
 
-# Fake Review Detection Page
 if st.session_state.page == "Fake Review Detection":
     st.title("Fake Review Detection")
     st.header("Upload Reviews for Fake Review Identification")
@@ -752,8 +712,3 @@ if st.session_state.page == "Fake Review Detection":
 
         else:
             st.write("*UPLOADED CSV MUST CONTAIN THE FOLLOWING COLUMNS: category, rating, label, text_*")
-
-# Initialize the databases
-initialize_scraped_database()
-initialize_uploaded_database()
-initialize_uploaded_output_database()
