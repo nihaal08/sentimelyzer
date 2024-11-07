@@ -21,6 +21,7 @@ import asyncio
 # Setup Streamlit page layout
 st.set_page_config(layout="wide")
 nltk.download('punkt', quiet=True)
+nltk.download('punkt_tab', quiet=True)
 nltk.download('stopwords', quiet=True)
 nltk.download('wordnet', quiet=True)
 nltk.download('vader_lexicon', quiet=True)
