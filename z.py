@@ -21,7 +21,6 @@ import asyncio
 # Setup Streamlit page layout
 st.set_page_config(layout="wide")
 nltk.download('punkt', quiet=True)
-nltk.download('punkt_tab', quiet=True)
 nltk.download('stopwords', quiet=True)
 nltk.download('wordnet', quiet=True)
 nltk.download('vader_lexicon', quiet=True)
@@ -84,25 +83,15 @@ def clean_text(text):
     """Cleans input text by removing unwanted characters."""
     text = re.sub(r'[^\w\s]', '', text)
     return re.sub(r'\s+', ' ', text).strip()
-def filter_unwanted_comments(reviews, unwanted_keywords):
-    """Filters out reviews containing unwanted keywords."""
-    filtered_reviews = []
-    for review in reviews:
-        if not any(keyword.lower() in review['Description'].lower() for keyword in unwanted_keywords):
-            filtered_reviews.append(review)
-    return filtered_reviews
+
 def chat_and_help_section():
     st.title("Chat & Help Assistant")
-
-    # Display previous messages
     for message in st.session_state.messages:
         with st.chat_message(message["role"]):
             st.markdown(message["content"])
 
-    # User input
     if prompt := st.chat_input("How can I assist you? (Type 'help' for options)"):
         st.session_state.messages.append({"role": "user", "content": prompt})
-
         with st.chat_message("user"):
             st.markdown(prompt)
 
@@ -138,7 +127,7 @@ def generate_response(prompt):
         'fake review detection': (
             "### Fake Review Detection\n"
             "1. Upload a CSV file that includes reviews.\n"
-            "2. The system will identify likely fake reviews based on ratings and content.\n"
+            "2. The system will identify likely fake reviews based on ratings and content using NLP techniques.\n"
             "3. Make sure the CSV file has these essential columns: category, rating, label, text_."
         ),
         'history': (
@@ -307,7 +296,6 @@ async def scrape_reviews(url, pages):
 
 def analyze_sentiment(text):
     analyzer = SentimentIntensityAnalyzer()
-    negations = ['not', 'no', 'never', 'without', 'barely']
     sentences = nltk.tokenize.sent_tokenize(text)
 
     overall_sentiment = 0
@@ -316,12 +304,9 @@ def analyze_sentiment(text):
         sentiment_scores = analyzer.polarity_scores(sentence)
         overall_sentiment += sentiment_scores['compound']
 
-        if any(negation in sentence.lower() for negation in negations):
-            overall_sentiment -= 0.2
-
-    if overall_sentiment > len(sentences) * 0.05:
+    if overall_sentiment > 0.05:
         return 'Positive'
-    elif overall_sentiment < -len(sentences) * 0.05:
+    elif overall_sentiment < -0.05:
         return 'Negative'
     else:
         return 'Neutral'
@@ -410,7 +395,7 @@ def show_tutorial():
     - **Scrape Reviews**: Collect Amazon product reviews with ease.
     - **Upload Dataset**: Analyze your own CSV files for sentiment.
     - **Text Analysis**: Input custom text to understand sentiment.
-    - **Fake Review Detection**: Identify potentially fake reviews from your dataset.
+    - **Fake Review Detection**: Identify potentially fake reviews from your dataset using NLP.
     - **History**: View past analyses and results for comparison.
     
     **Explore More** using the sidebar to navigate through the features of this dashboard!
@@ -693,23 +678,42 @@ if st.session_state.page == "Fake Review Detection":
 
         required_columns = ['category', 'rating', 'label', 'text_']
         if all(col in fake_reviews_data.columns for col in required_columns):
-            fake_reviews_data['Is_Fake'] = fake_reviews_data['rating'].apply(lambda x: 'Fake' if x < 3 else 'Real')
+            # Initialize Sentiment Analyzer
+            sia = SentimentIntensityAnalyzer()
+            
+            # Function to analyze sentiment and classify as Fake/Real
+            def classify_fake_reviews(row):
+                sentiment_score = sia.polarity_scores(row['text_'])['compound']
+                rating = float(row['rating'])
+                
+                # Fake logic: Low rating with a positive sentiment score
+                if rating < 3 and sentiment_score >= 0.05:
+                    return 'Fake'
+                elif rating >= 3:
+                    return 'Real'
+                return 'Uncertain'
+
+            # Apply the function and create a new column
+            fake_reviews_data['Is_Fake'] = fake_reviews_data.apply(classify_fake_reviews, axis=1)
+
             st.write("#### Fake Review Detection Results")
-            results_df = fake_reviews_data[['category', 'rating', 'text_']].copy()
-            results_df['Is_Fake'] = fake_reviews_data['Is_Fake']
+            results_df = fake_reviews_data[['category', 'rating', 'text_', 'Is_Fake']].copy()
             st.write(results_df)
 
             fake_count = fake_reviews_data[fake_reviews_data['Is_Fake'] == 'Fake'].shape[0]
             real_count = fake_reviews_data[fake_reviews_data['Is_Fake'] == 'Real'].shape[0]
+            uncertain_count = fake_reviews_data[fake_reviews_data['Is_Fake'] == 'Uncertain'].shape[0]
+
             st.write("### ANALYSIS INSIGHTS")
             st.write(f"Total Reviews: {len(fake_reviews_data)}")
             st.write(f"Fake Reviews Detected: {fake_count}")
             st.write(f"Real Reviews Detected: {real_count}")
+            st.write(f"Uncertain Reviews: {uncertain_count}")
 
-            fig = px.pie(names=['Fake', 'Real'], values=[fake_count, real_count],
+            fig = px.pie(names=['Fake', 'Real', 'Uncertain'], values=[fake_count, real_count, uncertain_count],
                          title='Distribution of Fake vs Real Reviews',
-                         color_discrete_sequence=['green', 'red'])
+                         color_discrete_sequence=['green', 'red', 'yellow'])
             st.plotly_chart(fig)
 
         else:
-            st.write("*UPLOADED CSV MUST CONTAIN THE FOLLOWING COLUMNS: category, rating, label, text_*")
+            st.write("*UPLOADED CSV MUST CONTAIN THE FOLLOWING COLUMNS: category, rating, label, text_.*")
