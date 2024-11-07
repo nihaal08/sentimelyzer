@@ -149,9 +149,9 @@ def generate_response(prompt):
         'help': (
             "### Need Help?\n"
             "Ask me specific questions or request assistance about features like:\n"
-            "- Scraping reviews\n"
-            "- Uploading datasets\n"
-            "- Analyzing text\n"
+            "- Scrape reviews\n"
+            "- Upload datasets\n"
+            "- Analyze text\n"
             "If you're unsure where to start, just type 'Getting Started' for tips!"
         ),
         'getting started': (
