@@ -21,6 +21,7 @@ import asyncio
 # Setup Streamlit page layout
 st.set_page_config(layout="wide")
 nltk.download('punkt', quiet=True)
+nltk.download('punkt_tab', quiet=True)
 nltk.download('stopwords', quiet=True)
 nltk.download('wordnet', quiet=True)
 nltk.download('vader_lexicon', quiet=True)
@@ -163,9 +164,9 @@ def generate_response(prompt):
         'tutorial': (
             "### Interactive Tutorial\n"
             "This dashboard includes functionalities like:\n"
-            "1. Scraping reviews.\n"
-            "2. Uploading datasets.\n"
-            "3. Analyzing custom text.\n"
+            "1. Scrape reviews.\n"
+            "2. Upload datasets.\n"
+            "3. Text Analysis.\n"
             "Feel free to navigate through the sidebar for access to various sections."
         )
     }
