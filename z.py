@@ -13,10 +13,10 @@ import plotly.express as px
 import plotly.graph_objects as go
 import sqlite3
 import nltk
+import asyncio
 from concurrent.futures import ThreadPoolExecutor
 from wordcloud import WordCloud
 from googletrans import Translator
-import asyncio
 
 # Setup Streamlit page layout
 st.set_page_config(layout="wide")
@@ -33,19 +33,19 @@ def load_css():
     st.markdown("""
         <style>
             body {
-                color: green;               
+                color: #1877f2;               
                 font-family: Arial, sans-serif;
             }
             h1, h2, h3, h4, h5, h6 {
-                color: green;               
+                color: #1877f2;               
                 text-transform: uppercase; 
             }
             .stSidebar {
                 background-color: black;  
-                color: darkgreen;                
+                color: darkblue;                
             }
             .stButton > button {
-                background-color: green;    
+                background-color: #1877f2;   
                 color: black;             
                 border: none;             
                 padding: 10px;           
@@ -56,7 +56,7 @@ def load_css():
                 font-size: 16px;         
             }
             .stButton > button:hover {
-                background-color: lightgreen;
+                background-color: #1877f2;
                 color: black;
             }
         </style>
@@ -84,6 +84,14 @@ def clean_text(text):
     """Cleans input text by removing unwanted characters."""
     text = re.sub(r'[^\w\s]', '', text)
     return re.sub(r'\s+', ' ', text).strip()
+
+def filter_unwanted_comments(reviews, unwanted_keywords):
+    """Filters out reviews containing any of the unwanted keywords."""
+    filtered_reviews = []
+    for review in reviews:
+        if not any(keyword in review['Description'].lower() for keyword in unwanted_keywords):
+            filtered_reviews.append(review)
+    return filtered_reviews
 
 def chat_and_help_section():
     st.title("Chat & Help Assistant")
