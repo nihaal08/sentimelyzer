@@ -6,7 +6,6 @@ emoji
 nltk
 matplotlib
 plotly
-requests
 wordcloud
 googletrans==4.0.0-rc1  # Translator module may need googletrans==4.0.0-rc1
 lxml
