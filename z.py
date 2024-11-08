@@ -28,13 +28,6 @@ nltk.download('vader_lexicon', quiet=True)
 
 STOPWORDS = set(stopwords.words('english'))
 
-import requests
-referrer = st.request.headers.get('Referer')
-if referrer and 'https://hash.alaman.in/home.php' in referrer:
-    st.write("Welcome to the app!")
-else:
-    st.error("Access denied! You can only access this app through our website.")
-# Load CSS for styling
 def load_css():
     st.markdown("""
         <style>
