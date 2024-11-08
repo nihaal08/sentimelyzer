@@ -401,9 +401,9 @@ def show_tutorial():
     st.markdown("""
     Welcome to the Sentiment Analysis Dashboard! Here’s how to get started:
     - **Home**: Overview of functionalities and quick insights.
-    - **Scrape Reviews**: Collect Amazon product reviews with ease.
     - **Upload Dataset**: Analyze your own CSV files for sentiment.
     - **Text Analysis**: Input custom text to understand sentiment.
+    - **Scrape Reviews**: Collect Amazon product reviews with ease.
     - **Fake Review Detection**: Identify potentially fake reviews from your dataset using NLP.
     - **History**: View past analyses and results for comparison.
     
@@ -680,20 +680,26 @@ if st.session_state.page == "Fake Review Detection":
     fake_review_uploaded_file = st.file_uploader("CHOOSE A CSV FILE WITH REVIEWS", type="csv")
     
     if fake_review_uploaded_file is not None:
+        # Read the uploaded file
         fake_reviews_data = pd.read_csv(fake_review_uploaded_file)
-        
+
         st.write("### UPLOADED REVIEWS")
         st.write(fake_reviews_data)
 
-        required_columns = ['category', 'rating', 'label', 'text_']
+        # Required columns
+        required_columns = ['Id', 'ProductId', 'UserId', 'ProfileName', 
+                            'HelpfulnessNumerator', 'HelpfulnessDenominator', 
+                            'Score', 'Time', 'Summary', 'Text']
+        
+        # Check if all required columns are present
         if all(col in fake_reviews_data.columns for col in required_columns):
             # Initialize Sentiment Analyzer
             sia = SentimentIntensityAnalyzer()
             
             # Function to analyze sentiment and classify as Fake/Real
             def classify_fake_reviews(row):
-                sentiment_score = sia.polarity_scores(row['text_'])['compound']
-                rating = float(row['rating'])
+                sentiment_score = sia.polarity_scores(row['Text'])['compound']  # Analyze based on the 'Text' column
+                rating = float(row['Score'])
                 
                 # Fake logic: Low rating with a positive sentiment score
                 if rating < 3 and sentiment_score >= 0.05:
@@ -706,9 +712,11 @@ if st.session_state.page == "Fake Review Detection":
             fake_reviews_data['Is_Fake'] = fake_reviews_data.apply(classify_fake_reviews, axis=1)
 
             st.write("#### Fake Review Detection Results")
-            results_df = fake_reviews_data[['category', 'rating', 'text_', 'Is_Fake']].copy()
+            results_df = fake_reviews_data[['Id', 'ProductId', 'UserId', 'ProfileName', 
+                                              'Score', 'Text', 'Is_Fake']].copy()
             st.write(results_df)
 
+            # Count of each category
             fake_count = fake_reviews_data[fake_reviews_data['Is_Fake'] == 'Fake'].shape[0]
             real_count = fake_reviews_data[fake_reviews_data['Is_Fake'] == 'Real'].shape[0]
             uncertain_count = fake_reviews_data[fake_reviews_data['Is_Fake'] == 'Uncertain'].shape[0]
@@ -719,10 +727,11 @@ if st.session_state.page == "Fake Review Detection":
             st.write(f"Real Reviews Detected: {real_count}")
             st.write(f"Uncertain Reviews: {uncertain_count}")
 
+            # Pie chart of results
             fig = px.pie(names=['Fake', 'Real', 'Uncertain'], values=[fake_count, real_count, uncertain_count],
                          title='Distribution of Fake vs Real Reviews',
                          color_discrete_sequence=['green', 'red', 'yellow'])
             st.plotly_chart(fig)
 
         else:
-            st.write("*UPLOADED CSV MUST CONTAIN THE FOLLOWING COLUMNS: category, rating, label, text_.*")
+            st.write("*UPLOADED CSV MUST CONTAIN THE FOLLOWING COLUMNS: Id, ProductId, UserId, ProfileName, HelpfulnessNumerator, HelpfulnessDenominator, Score, Time, Summary, Text.*")
