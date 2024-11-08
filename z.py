@@ -414,7 +414,7 @@ def show_tutorial():
     st.markdown("- Visualizations provide clear insights into data trends and sentiments.")
 
 def display_navbar():
-    st.sidebar.image('LOGO.png', use_column_width=True)
+    st.sidebar.image('logo.png', use_column_width=True)
     if st.sidebar.button("Home", key="home_button"):
         st.session_state.page = "Home"
     if st.sidebar.button("Text Analysis", key="text_analysis_button"):
