@@ -59,8 +59,8 @@ def load_css():
                 background-color: #1877f2;
                 color: black;
             }
-            .stSidebar img {
-                width: 150px;  /* Change this value to your desired width */
+            .stSidebar image {
+                width: 15px;  /* Change this value to your desired width */
                 height: auto;  /* Maintain aspect ratio */
             }
         </style>
