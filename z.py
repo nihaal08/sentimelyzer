@@ -18,6 +18,14 @@ from concurrent.futures import ThreadPoolExecutor
 from wordcloud import WordCloud
 from googletrans import Translator
 
+import requests
+referrer = st.request.headers.get('Referer')
+# Check if referrer matches your website
+if referrer and 'hash.alaman.in' in referrer:
+    st.write("Welcome to the app!")
+else:
+    st.error("Access denied! You can only access this app through our website.")
+
 # Setup Streamlit page layout
 st.set_page_config(layout="wide")
 nltk.download('punkt', quiet=True)
