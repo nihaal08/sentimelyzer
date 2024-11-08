@@ -18,7 +18,6 @@ from concurrent.futures import ThreadPoolExecutor
 from wordcloud import WordCloud
 from googletrans import Translator
 
-# Referrer check
 # Setup Streamlit page layout
 st.set_page_config(layout="wide")
 
@@ -28,9 +27,6 @@ if access_token != "YOUR_SECRET_ACCESS_TOKEN":  # Replace with your own token
     st.error("Access denied! You can only access this app through authorized means.")
     st.stop()  # Stop execution if access is denied
 
-
-# Setup Streamlit page layout
-st.set_page_config(layout="wide")
 nltk.download('punkt', quiet=True)
 nltk.download('stopwords', quiet=True)
 nltk.download('wordnet', quiet=True)
