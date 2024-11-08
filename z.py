@@ -19,13 +19,15 @@ from wordcloud import WordCloud
 from googletrans import Translator
 
 # Referrer check
-referrer = st.request.headers.get('Referer')
-# Check if referrer matches your website
-if referrer and 'hash.alaman.in' in referrer:
-    st.write("Welcome to the app!")
-else:
-    st.error("Access denied! You can only access this app through our website.")
+# Setup Streamlit page layout
+st.set_page_config(layout="wide")
+
+# Access Token for validation
+access_token = st.text_input("Enter Access Token to access the app:")
+if access_token != "YOUR_SECRET_ACCESS_TOKEN":  # Replace with your own token
+    st.error("Access denied! You can only access this app through authorized means.")
     st.stop()  # Stop execution if access is denied
+
 
 # Setup Streamlit page layout
 st.set_page_config(layout="wide")
