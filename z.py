@@ -446,24 +446,12 @@ def display_navbar():
 display_navbar()
 
 if st.session_state.page == "Home":
-    st.title("WELCOME TO THE SENTIMENT ANALYSIS DASHBOARD!")
+    st.title("WELCOME TO SentimelyzeR")
     st.markdown("""
-        ### Analyze Amazon Product Reviews Effortlessly!
-        This interactive dashboard is designed to help you scrape, analyze, and visualize Amazon reviews for effective sentiment analysis.
-        
-        #### Get Started with These Features:
-        - **Scrape Reviews** from Amazon by just entering the product URL.
-        - **Upload Your Datasets** in CSV format to analyze reviews on the go.
-        - **Analyze Custom Text** inputs to gauge sentiments.
-        - **Visual Insights** through charts and graphs to help you understand data better.
-        
-        #### Interactive and User-Friendly
-        Explore the sidebar for a seamless experience, and take advantage of our support capabilities for guidance and assistance.
-        
-        ### Why Sentiment Analysis?
-        Sentiment analysis helps businesses understand customer emotions, enhance product offerings, and improve overall sentiment through constructive feedback.
+    Your Gateway to Understanding Sentiments
+    Sentimelyzer is your go-to tool for effortlessly analyzing Amazon product reviews to uncover customer sentiment. With features like scraping reviews directly from Amazon URLs, uploading your own CSV datasets for analysis, and evaluating custom text inputs, you can gain valuable insights into consumer opinions. Our interactive visualizations make it easy to interpret data trends and improve your product offerings based on real feedback. Start exploring the sidebar to enhance your understanding of customer sentiments today!
     """)
-
+    
 if st.session_state.page == "Support":
     show_tutorial()
     st.write("---")
