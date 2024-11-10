@@ -446,6 +446,7 @@ def display_navbar():
 display_navbar()
 
 if st.session_state.page == "Home":
+    st.write("")
     st.markdown("""
         <h1 style="text-align: center;">Welcome To SentimelyzeR</h1>
         <h3 style="text-align: center;">Your Gateway to Understanding Sentiments</h3>
