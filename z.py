@@ -42,7 +42,7 @@ def load_css():
             }
             .stSidebar {
                 background-color: black;  
-                color: brown;   
+                color: #F5F5DC;   
                 text-align:center;
                 font-size:10px
             }
