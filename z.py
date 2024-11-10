@@ -42,7 +42,9 @@ def load_css():
             }
             .stSidebar {
                 background-color: black;  
-                color: brown;                
+                color: brown;   
+                text-align:center;
+                font-size:10px
             }
             .stButton > button {
                 background-color: #F5F5DC;   
@@ -55,6 +57,7 @@ def load_css():
                 text-align: center;      
                 font-size: 16px;         
             }
+            
             .stButton > button:hover {
                 background-color: brown;
                 color: black;
@@ -422,7 +425,7 @@ def show_tutorial():
 def display_navbar():
     st.sidebar.image('sentimelyzer.png', use_column_width=True)
     st.sidebar.write("SentimelyzeR") 
-    st.sidebar.write("") 
+    st.sidebar.write("Your Gateway to Understanding Sentiments") 
     st.sidebar.write("") 
     st.sidebar.write("") 
     if st.sidebar.button("Home", key="home_button"):
