@@ -392,7 +392,7 @@ def clear_database(table_name):
     try:
         conn = sqlite3.connect(db_name)
         cursor = conn.cursor()
-        cursor.execute(f'DELETE FROM {table_name}')  # Run delete from the correct table
+        cursor.execute(f'DELETE FROM {table_name}') 
         conn.commit()
         st.success(f"All entries in {table_name} have been cleared.")
     except Exception as e:
@@ -422,13 +422,14 @@ def show_tutorial():
     st.markdown("- Visualizations provide clear insights into data trends and sentiments.")
 
 def display_navbar():
-   
     st.sidebar.write("") 
     st.sidebar.image('sentimelyzer.png', use_column_width=True)
     st.sidebar.write("") 
     st.sidebar.write("") 
     if st.sidebar.button("Home", key="home_button"):
         st.session_state.page = "Home"
+    if st.sidebar.button("About", key="about_button"):
+        st.session_state.page = "About"
     if st.sidebar.button("Text Analysis", key="text_analysis_button"):
         st.session_state.page = "Text Analysis"
     if st.sidebar.button("Upload Dataset", key="dataset_upload_button"):
@@ -446,18 +447,24 @@ display_navbar()
 
 if st.session_state.page == "Home":
     st.markdown("""
-        <div style="text-align: center; margin: 0 auto;">
-            <h1>Welcome To SentimelyzeR</h1>
-            <h3>Your Gateway to Understanding Sentiments</h3>
-            <p>Sentimelyzer is your go-to tool for effortlessly analyzing Amazon product reviews to uncover customer sentiment. 
-            With features like scraping reviews directly from Amazon URLs, uploading your own CSV datasets for analysis, and 
-            evaluating custom text inputs, you can gain valuable insights into consumer opinions. 
-            Our interactive visualizations make it easy to interpret data trends and improve your product offerings based on real feedback. 
-            Start exploring the sidebar to enhance your understanding of customer sentiments today!</p>
-            <h6>Here’s a list of the various options available in the SentimelyzeR:</h6>
-            <p> Scrape Reviews <br> Upload Dataset <br> Text Analysis <br> Fake Review Detection <br> History <br> Support <br> Visual Insights <br> Export Options</p>
-        </div> """, unsafe_allow_html=True)
+        <h1 style="text-align: center;">Welcome To SentimelyzeR</h1>
+        <h3 style="text-align: center;">Your Gateway to Understanding Sentiments</h3>
+    """, unsafe_allow_html=True)
 
+if st.session_state.page == "About":
+    st.title("About")
+    st.markdown("""
+        Sentimelyzer is your go-to tool for effortlessly analyzing Amazon product reviews to uncover customer sentiment. 
+        With features like scraping reviews directly from Amazon URLs, uploading your own CSV datasets for analysis, and 
+        evaluating custom text inputs, you can gain valuable insights into consumer opinions. 
+        Our interactive visualizations make it easy to interpret data trends and improve your product offerings based on real feedback.
+    """)
+    st.write("### Features of SentimelyzeR:")
+    st.write("- **Scrape Reviews:** Instantly gather reviews from Amazon products.")
+    st.write("- **Upload Dataset:** Analyze your own CSV files containing product reviews.")
+    st.write("- **Text Analysis:** Understand the sentiment of any text you provide.")
+    st.write("- **Fake Review Detection:** Identify potentially fake reviews using NLP.")
+    st.write("- **History:** Access your previous analyses and results.")
     
 if st.session_state.page == "Support":
     show_tutorial()
