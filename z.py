@@ -32,8 +32,11 @@ def load_css():
     st.markdown("""
         <style>
             body {
-                background-color: black;
                 color: #F5F5DC;               
+                font-family: Arial, sans-serif;
+            }
+            body > home {
+                color: blue;               
                 font-family: Arial, sans-serif;
             }
             h1, h2, h3, h4, h5, h6 {
@@ -446,9 +449,10 @@ def display_navbar():
 display_navbar()
 
 if st.session_state.page == "Home":
-    st.title("WELCOME TO SentimelyzeR")
+    st.title("Welcome To SentimelyzeR")
+    st.markdown(""" Your Gateway to Understanding Sentiments
+    """)
     st.markdown("""
-    Your Gateway to Understanding Sentiments
     Sentimelyzer is your go-to tool for effortlessly analyzing Amazon product reviews to uncover customer sentiment. With features like scraping reviews directly from Amazon URLs, uploading your own CSV datasets for analysis, and evaluating custom text inputs, you can gain valuable insights into consumer opinions. Our interactive visualizations make it easy to interpret data trends and improve your product offerings based on real feedback. Start exploring the sidebar to enhance your understanding of customer sentiments today!
     """)
     
