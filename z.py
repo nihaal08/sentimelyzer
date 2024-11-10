@@ -379,18 +379,24 @@ def fetch_all_reviews(table_name):
         conn.close()
     return data
 
-def clear_database(db_name):
+def clear_database(table_name):
+    """Clear all entries from the specified database table."""
+    if 'scraped' in table_name:
+        db_name = 'scraped_sentiment_analysis.db'
+    else:
+        db_name = 'uploaded_output_analysis.db'
+
     try:
         conn = sqlite3.connect(db_name)
         cursor = conn.cursor()
-        cursor.execute(f'DELETE FROM {db_name.split(".")[0]}')
+        cursor.execute(f'DELETE FROM {table_name}')  # Correctly use the table_name here
         conn.commit()
-        st.success(f"All entries in {db_name.split('.')[0]} have been cleared.")
+        st.success(f"All entries in {table_name} have been cleared.")
     except Exception as e:
-        st.error(f"Error clearing database: {e}")
+        st.error(f"Error clearing {table_name}: {e}")
     finally:
         conn.close()
-
+        
 def export_to_csv(data, filename):
     csv = data.to_csv(index=False)
     st.download_button(label="Download Results as CSV", data=csv, file_name=filename, mime='text/csv')
