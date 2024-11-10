@@ -455,7 +455,7 @@ if st.session_state.page == "Home":
             Our interactive visualizations make it easy to interpret data trends and improve your product offerings based on real feedback. 
             Start exploring the sidebar to enhance your understanding of customer sentiments today!</p>
             <h6>Here’s a list of the various options available in the SentimelyzeR:</h6>
-            <p>< Scrape Reviews > < Upload Dataset > < Text Analysis > < Fake Review Detection > < History > < Support > < Visual Insights > < Export Options</p>
+            <p>< Scrape Reviews <br> Upload Dataset <br> Text Analysis <br> Fake Review Detection <br> History <br> Support <br> Visual Insights <br> Export Options</p>
         </div> """, unsafe_allow_html=True)
 
     
