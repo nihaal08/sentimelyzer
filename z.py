@@ -447,7 +447,7 @@ display_navbar()
 
 if st.session_state.page == "Home":
     st.markdown("""
-        <h1 style="text-align: center;">Welcome To SentimelyzeR</h1>
+        <h1 style="text-align: center; margin-top:20px; ">Welcome To SentimelyzeR</h1>
         <h3 style="text-align: center;">Your Gateway to Understanding Sentiments</h3>
     """, unsafe_allow_html=True)
 
