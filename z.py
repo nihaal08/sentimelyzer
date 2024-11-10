@@ -384,7 +384,7 @@ def clear_database(table_name):
     if 'scraped' in table_name:
         db_name = 'scraped_sentiment_analysis.db'
     else:
-        db_name = 'uploaded_output_analysis.db'
+        db_name = 'scraped_sentiment_analysis.db'
 
     try:
         conn = sqlite3.connect(db_name)
