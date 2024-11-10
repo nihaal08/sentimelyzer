@@ -454,8 +454,7 @@ if st.session_state.page == "Home":
             evaluating custom text inputs, you can gain valuable insights into consumer opinions. 
             Our interactive visualizations make it easy to interpret data trends and improve your product offerings based on real feedback. 
             Start exploring the sidebar to enhance your understanding of customer sentiments today!</p>
-        </div>
-
+        </div> """, unsafe_allow_html=True)
     
 if st.session_state.page == "Support":
     show_tutorial()
