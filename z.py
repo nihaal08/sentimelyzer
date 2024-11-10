@@ -446,48 +446,18 @@ display_navbar()
 
 if st.session_state.page == "Home":
     st.markdown("""
-        <div style="text-align: center;">
-            <h1 style="font-family: Arial, sans-serif; color: brown;">Welcome to SentimelyzeR!</h1>
-            <h3 style="font-family: Arial, sans-serif; color: #6A5ACD;">Your Gateway to Understanding Customer Sentiments</h3>
-            <p style="font-family: Arial, sans-serif; color: #708090; max-width: 800px; margin: auto;"> 
-            SentimelyzeR is designed to empower you with insights from Amazon product reviews, facilitating a deep understanding of customer sentiment
-            through various intuitive features. Whether you're a researcher, a marketer, or simply curious, we've got you covered!
-            </p>
-            
-            <hr style="border: 1px solid brown; width: 80%; margin: auto;">
-            
-            <h4 style="font-family: Arial, sans-serif; color: brown;">Explore Our Features:</h4>
-            <div style="display: flex; flex-wrap: wrap; justify-content: center; margin: 20px 0;">
-                <div style="margin: 10px; padding: 20px; border: 1px solid #6A5ACD; border-radius: 8px; background-color: #F5F5DC; width: 250px;">
-                    <h5 style="color: brown;">🌐 Scrape Reviews</h5>
-                    <p>Effortlessly gather Amazon product reviews by providing a URL.    
-                    </p>
-                </div>
-                <div style="margin: 10px; padding: 20px; border: 1px solid #6A5ACD; border-radius: 8px; background-color: #F5F5DC; width: 250px;">
-                    <h5 style="color: brown;">📊 Upload Dataset</h5>
-                    <p>Analyze your own CSV files containing product reviews right here!</p>
-                </div>
-                <div style="margin: 10px; padding: 20px; border: 1px solid #6A5ACD; border-radius: 8px; background-color: #F5F5DC; width: 250px;">
-                    <h5 style="color: brown;">📝 Text Analysis</h5>
-                    <p>Input custom text and receive sentiment analytics instantaneously!</p>
-                </div>
-                <div style="margin: 10px; padding: 20px; border: 1px solid #6A5ACD; border-radius: 8px; background-color: #F5F5DC; width: 250px;">
-                    <h5 style="color: brown;">🔍 Fake Review Detection</h5>
-                    <p>Uncover potentially misleading reviews with our NLP techniques!</p>
-                </div>
-                <div style="margin: 10px; padding: 20px; border: 1px solid #6A5ACD; border-radius: 8px; background-color: #F5F5DC; width: 250px;">
-                    <h5 style="color: brown;">📜 History</h5>
-                    <p>Review your past analyses and gather historical insights.</p>
-                </div>
-                <div style="margin: 10px; padding: 20px; border: 1px solid #6A5ACD; border-radius: 8px; background-color: #F5F5DC; width: 250px;">
-                    <h5 style="color: brown;">🤝 Support</h5>
-                    <p>Need help? Access tutorials and tips on navigating the platform.</p>
-                </div>
-            </div>
-            <hr style="border: 1px solid brown; width: 80%; margin: auto;">
-            <p style="font-family: Arial, sans-serif; color: #708090;">Dive right in by selecting a feature from the sidebar! Happy analyzing!</p>
-        </div>
-        """, unsafe_allow_html=True)
+        <div style="text-align: center; margin: 0 auto;">
+            <h1>Welcome To SentimelyzeR</h1>
+            <h3>Your Gateway to Understanding Sentiments</h3>
+            <p>Sentimelyzer is your go-to tool for effortlessly analyzing Amazon product reviews to uncover customer sentiment. 
+            With features like scraping reviews directly from Amazon URLs, uploading your own CSV datasets for analysis, and 
+            evaluating custom text inputs, you can gain valuable insights into consumer opinions. 
+            Our interactive visualizations make it easy to interpret data trends and improve your product offerings based on real feedback. 
+            Start exploring the sidebar to enhance your understanding of customer sentiments today!</p>
+            <h6>Here’s a list of the various options available in the SentimelyzeR:</h6>
+            <p> Scrape Reviews <br> Upload Dataset <br> Text Analysis <br> Fake Review Detection <br> History <br> Support <br> Visual Insights <br> Export Options</p>
+        </div> """, unsafe_allow_html=True)
+
     
 if st.session_state.page == "Support":
     show_tutorial()
