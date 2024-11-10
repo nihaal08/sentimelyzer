@@ -421,12 +421,9 @@ def show_tutorial():
 
 def display_navbar():
     st.sidebar.image('sentimelyzer.png', use_column_width=True)
-
-
-
-
-
-    
+    st.sidebar.write("") 
+    st.sidebar.write("") 
+    st.sidebar.write("") 
     if st.sidebar.button("Home", key="home_button"):
         st.session_state.page = "Home"
     if st.sidebar.button("Text Analysis", key="text_analysis_button"):
