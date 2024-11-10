@@ -44,7 +44,7 @@ def load_css():
                 color: darkblue;                
             }
             .stButton > button {
-                background-color: #1877f2;   
+                background-color: #F5F5DC;   
                 color: black;             
                 border: none;             
                 padding: 10px;           
@@ -55,7 +55,7 @@ def load_css():
                 font-size: 16px;         
             }
             .stButton > button:hover {
-                background-color: #1877f2;
+                background-color: brown;
                 color: black;
             }
         </style>
