@@ -32,16 +32,17 @@ def load_css():
     st.markdown("""
         <style>
             body {
-                color: #1877f2;               
+                background-color: black;
+                color: #F5F5DC;               
                 font-family: Arial, sans-serif;
             }
             h1, h2, h3, h4, h5, h6 {
-                color: #1877f2;               
+                color: #F5F5DC;               
                 text-transform: uppercase; 
             }
             .stSidebar {
                 background-color: black;  
-                color: darkblue;                
+                color: brown;                
             }
             .stButton > button {
                 background-color: #F5F5DC;   
