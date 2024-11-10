@@ -454,7 +454,10 @@ if st.session_state.page == "Home":
             evaluating custom text inputs, you can gain valuable insights into consumer opinions. 
             Our interactive visualizations make it easy to interpret data trends and improve your product offerings based on real feedback. 
             Start exploring the sidebar to enhance your understanding of customer sentiments today!</p>
+            <h6>Here’s a list of the various options available in the SentimelyzeR:</h6>
+            <p>Scrape Reviews\nUpload Dataset\nText Analysis\nFake Review Detection\nHistory\nSupport\nVisual Insights\nExport Options</p>
         </div> """, unsafe_allow_html=True)
+
     
 if st.session_state.page == "Support":
     show_tutorial()
