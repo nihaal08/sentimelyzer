@@ -421,6 +421,7 @@ def show_tutorial():
 
 def display_navbar():
     st.sidebar.image('sentimelyzer.png', use_column_width=True)
+    st.sidebar.write("SentimelyzeR") 
     st.sidebar.write("") 
     st.sidebar.write("") 
     st.sidebar.write("") 
