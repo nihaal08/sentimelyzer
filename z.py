@@ -32,7 +32,7 @@ def load_css():
     st.markdown("""
         <style>
             body {
-                color: #F5F5DC;               
+                color: #D2C9A3;               
                 font-family: Arial, sans-serif;
             }
             h1, h2, h3, h4, h5, h6 {
@@ -41,12 +41,12 @@ def load_css():
             }
             .stSidebar {
                 background-color: black;  
-                color: #F5F5DC;   
+                color: #D2C9A3;   
                 text-align:center;
                 font-size:10px
             }
             .stButton > button {
-                background-color: brown;   
+                background-color: #D2C9A3;   
                 color: black;             
                 border: none;             
                 padding: 10px;           
@@ -58,7 +58,7 @@ def load_css():
             }
             
             .stButton > button:hover {
-                background-color: #F5F5DC;
+                background-color: brown;
                 color: black;
             }
         </style>
