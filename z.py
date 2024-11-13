@@ -19,7 +19,9 @@ from googletrans import Translator
 import logging
 
 logging.basicConfig(filename='app.log', level=logging.ERROR)
+
 st.set_page_config(layout="wide")
+
 nltk.download('punkt', quiet=True)
 nltk.download('stopwords', quiet=True)
 nltk.download('wordnet', quiet=True)
@@ -341,7 +343,147 @@ if st.session_state.page == "Home":
         <h1 style="text-align: center;">Welcome To SentimelyzeR</h1>
         <h3 style="text-align: center;">Your Gateway to Understanding Sentiments</h3>
     """, unsafe_allow_html=True)
+if st.session_state.page == "About":
+    st.title("About")
+    st.markdown("""
+        Sentimelyzer is a powerful tool designed for analyzing Amazon product reviews and extracting customer sentiment. 
+        It offers features such as scraping reviews from URLs, uploading CSV datasets for analysis, and evaluating custom text inputs for sentiment. 
+        Interactive visualizations facilitate data trend interpretation, empowering businesses to enhance their offerings based on authentic feedback.
+    """)
+    st.write("### Features of SentimelyzeR:")
+    st.write("- **Scrape Reviews:** Quickly gather reviews from Amazon products.")
+    st.write("- **Upload Dataset:** Analyze your own product review CSV files.")
+    st.write("- **Text Analysis:** Evaluate the sentiment of any provided text.")
+    st.write("- **Fake Review Detection:** Identify potentially fraudulent reviews using advanced NLP techniques.")
+    st.write("- **History:** Access previous analyses and results.")
 
+def show_tutorial():
+    st.subheader("Interactive Tutorial")
+    st.markdown("""
+    Welcome to the Sentiment Analysis Dashboard! Here’s how to get started:
+    - **Home**: Overview of functionalities and quick insights.
+    - **Upload Dataset**: Analyze your own CSV files for sentiment.
+    - **Text Analysis**: Input custom text to understand sentiment.
+    - **Scrape Reviews**: Collect Amazon product reviews with ease.
+    - **Fake Review Detection**: Identify potentially fake reviews from your dataset using NLP.
+    - **History**: Review past analyses and results.
+    
+    **Explore More** using the sidebar to navigate through the features of this dashboard!
+    """)
+    st.markdown("### Quick Tips:")
+    st.markdown("- Utilize the clear buttons in History for database management.")
+    st.markdown("- Visualizations enable clear insights into data trends and sentiments.")
+    
+def chat_and_help_section():
+    st.title("Chat & Help Assistant")
+    for message in st.session_state.messages:
+        with st.chat_message(message["role"]):
+            st.markdown(message["content"])
+
+    if prompt := st.chat_input("How may I assist you? (Type 'help' for options)"):
+        st.session_state.messages.append({"role": "user", "content": prompt})
+        with st.chat_message("user"):
+            st.markdown(prompt)
+
+        response = generate_response(prompt)
+        with st.chat_message("assistant"):
+            st.markdown(response)
+
+        st.session_state.messages.append({"role": "assistant", "content": response})
+
+
+def generate_response(prompt):
+    prompt = prompt.lower()  
+    help_responses = {
+        'scrape reviews': (
+            "### Scrape Reviews\n"
+            "To scrape reviews, follow these steps:\n"
+            "1. Enter the Amazon review URL.\n"
+            "2. Specify the number of pages you want to scrape.\n"
+            "3. Click the 'SCRAPE REVIEWS' button.\n"
+            "Ensure that the URL leads to a product page containing reviews."
+        ),
+       'help': (
+            "Ask me specific questions or request assistance about features like:\n"
+            "- Scrape reviews\n"
+            "- Sentiment Detection\n"
+            "- Analyze text\n"
+            "If you're unsure where to start, just type 'Getting Started' for tips!"
+        ),
+        'getting started': (
+            "### Getting Started\n"
+            "To kick off, you might want to:\n"
+            "1. Scrape some product reviews: Go to 'Scrape Reviews'.\n"
+            "2. Analyze The Sentiments in your dataset: Try 'Sentiment Detection'.\n"
+            "3. Check out 'Text Analysis' for sentiment on custom text!"
+        ),
+        'about': (
+            "### About SentimelyzeR\n"
+            "SentimelyzeR is a powerful sentiment analysis tool specifically designed for analyzing product reviews from platforms like Amazon. "
+            "With this application, users can effortlessly scrape reviews, upload their datasets for analysis, and understand customer sentiments through advanced Natural Language Processing (NLP) techniques. "
+            "\n\n**Key Features Include:**"
+            "\n- **Scrape Reviews:** Gather Amazon product reviews quickly by entering the product URL."
+            "\n- **Upload Dataset:** Analyze your own CSV files to gain insights into sentiment trends."
+            "\n- **Text Analysis:** Evaluate the sentiment of custom text inputs to understand their emotional tone."
+            "\n- **Fake Review Detection:** Identify potentially fraudulent reviews using sentiment scoring."
+            "\n- **History Tracking:** Access previous scraping and analysis results for ongoing review and insight."
+            "\n\nWhether you're a business looking to improve your offerings, or a researcher studying consumer behavior, "
+            "SentimelyzeR provides the tools you need for effective sentiment analysis."
+        ), 
+        'sentiment detection': (
+            "### Upload Dataset\n"
+            "To upload a CSV dataset:\n"
+            "1. Make sure the CSV file contains the following columns: Id, ProductId, UserId, ProfileName, "
+            "HelpfulnessNumerator, HelpfulnessDenominator, Score, Time, Summary, Text.\n"
+            "2. Click 'UPLOAD DATASET' to analyze your reviews."
+        ),
+        'text analysis': (
+            "### Text Analysis\n"
+            "For sentiment analysis, enter the desired text in the provided area. You will receive the sentiment result, "
+            "indicating whether it is positive, negative, or neutral."
+        ),
+        'fake review detection': (
+            "### Fake Review Detection\n"
+            "1. Upload a CSV file containing reviews.\n"
+            "2. The system will identify potentially fake reviews based on ratings and content using NLP techniques.\n"
+            "3. Ensure the CSV file includes these essential columns: Id, ProductId, UserId, ProfileName, "
+            "HelpfulnessNumerator, HelpfulnessDenominator, Score, Time, Summary, Text."
+        ),
+        'history': (
+            "### History\n"
+            "You can access previously analyzed datasets. Here, you have options to view, filter, and download past reviews' "
+            "sentiment results in various formats."
+        ),
+        'support': (
+            "### Need Help?\n"
+            "If you have questions or need assistance with the following features, feel free to ask:\n"
+            "- Scrape Reviews\n"
+            "- sentiment Detection \n"
+            "- Text Analysis\n"
+            "- Fake Reviews Detection\n"
+            "For additional guidance, type 'Getting Started' for more information."
+        ),
+
+        'tutorial': (
+            "### Interactive Tutorial\n"
+            "This dashboard offers numerous functionalities:\n"
+            "1. Scraping reviews from Amazon.\n"
+            "2. Uploading datasets for custom analysis.\n"
+            "3. Conducting Text Analysis for any provided text.\n"
+            "Use the sidebar to navigate through various features of this dashboard!"
+        )
+    }
+
+    response = help_responses.get(prompt, 
+    "I'm sorry, but I didn't understand your question. You can ask about:\n- Scraping Reviews\n- Uploading Dataset\n- Performing Text Analysis\n- Detecting Fake Reviews\n"
+    "Or type 'help' for options and guidance.")
+    return response
+
+if st.session_state.page == "Support":
+    show_tutorial()
+    st.write("---")
+    chat_and_help_section()
+    
 if st.session_state.page == "Scrape Reviews":
     st.header("SCRAPE REVIEWS FROM AMAZON")
     url_input = st.text_input("ENTER AMAZON REVIEW URL:")
@@ -541,7 +683,7 @@ if st.session_state.page == "Text Analysis":
                 st.write(f"*Reason:* {explanation}")
         else:
             st.write("*Please enter text for analysis.*")
-             
+                
 if st.session_state.page == "History":
     st.header("History of Reviews")
 
@@ -629,143 +771,3 @@ if st.session_state.page == "Fake Review Detection":
             st.write("*Uploaded CSV must contain the following columns: Id, ProductId, UserId, ProfileName, HelpfulnessNumerator, HelpfulnessDenominator, Score, Time, Summary, Text.*")
             
             
-if st.session_state.page == "About":
-    st.title("About")
-    st.markdown("""
-        Sentimelyzer is a powerful tool designed for analyzing Amazon product reviews and extracting customer sentiment. 
-        It offers features such as scraping reviews from URLs, uploading CSV datasets for analysis, and evaluating custom text inputs for sentiment. 
-        Interactive visualizations facilitate data trend interpretation, empowering businesses to enhance their offerings based on authentic feedback.
-    """)
-    st.write("### Features of SentimelyzeR:")
-    st.write("- **Scrape Reviews:** Quickly gather reviews from Amazon products.")
-    st.write("- **Upload Dataset:** Analyze your own product review CSV files.")
-    st.write("- **Text Analysis:** Evaluate the sentiment of any provided text.")
-    st.write("- **Fake Review Detection:** Identify potentially fraudulent reviews using advanced NLP techniques.")
-    st.write("- **History:** Access previous analyses and results.")
-
-def show_tutorial():
-    st.subheader("Interactive Tutorial")
-    st.markdown("""
-    Welcome to the Sentiment Analysis Dashboard! Here’s how to get started:
-    - **Home**: Overview of functionalities and quick insights.
-    - **Upload Dataset**: Analyze your own CSV files for sentiment.
-    - **Text Analysis**: Input custom text to understand sentiment.
-    - **Scrape Reviews**: Collect Amazon product reviews with ease.
-    - **Fake Review Detection**: Identify potentially fake reviews from your dataset using NLP.
-    - **History**: Review past analyses and results.
-    
-    **Explore More** using the sidebar to navigate through the features of this dashboard!
-    """)
-    st.markdown("### Quick Tips:")
-    st.markdown("- Utilize the clear buttons in History for database management.")
-    st.markdown("- Visualizations enable clear insights into data trends and sentiments.")
-def chat_and_help_section():
-    st.title("Chat & Help Assistant")
-    for message in st.session_state.messages:
-        with st.chat_message(message["role"]):
-            st.markdown(message["content"])
-
-    if prompt := st.chat_input("How may I assist you? (Type 'help' for options)"):
-        st.session_state.messages.append({"role": "user", "content": prompt})
-        with st.chat_message("user"):
-            st.markdown(prompt)
-
-        response = generate_response(prompt)
-        with st.chat_message("assistant"):
-            st.markdown(response)
-
-        st.session_state.messages.append({"role": "assistant", "content": response})
-
-
-def generate_response(prompt):
-    prompt = prompt.lower()  
-    help_responses = {
-        'scrape reviews': (
-            "### Scrape Reviews\n"
-            "To scrape reviews, follow these steps:\n"
-            "1. Enter the Amazon review URL.\n"
-            "2. Specify the number of pages you want to scrape.\n"
-            "3. Click the 'SCRAPE REVIEWS' button.\n"
-            "Ensure that the URL leads to a product page containing reviews."
-        ),
-       'help': (
-            "Ask me specific questions or request assistance about features like:\n"
-            "- Scrape reviews\n"
-            "- Sentiment Detection\n"
-            "- Analyze text\n"
-            "If you're unsure where to start, just type 'Getting Started' for tips!"
-        ),
-        'getting started': (
-            "### Getting Started\n"
-            "To kick off, you might want to:\n"
-            "1. Scrape some product reviews: Go to 'Scrape Reviews'.\n"
-            "2. Analyze The Sentiments in your dataset: Try 'Sentiment Detection'.\n"
-            "3. Check out 'Text Analysis' for sentiment on custom text!"
-        ),
-        'about': (
-            "### About SentimelyzeR\n"
-            "SentimelyzeR is a powerful sentiment analysis tool specifically designed for analyzing product reviews from platforms like Amazon. "
-            "With this application, users can effortlessly scrape reviews, upload their datasets for analysis, and understand customer sentiments through advanced Natural Language Processing (NLP) techniques. "
-            "\n\n**Key Features Include:**"
-            "\n- **Scrape Reviews:** Gather Amazon product reviews quickly by entering the product URL."
-            "\n- **Upload Dataset:** Analyze your own CSV files to gain insights into sentiment trends."
-            "\n- **Text Analysis:** Evaluate the sentiment of custom text inputs to understand their emotional tone."
-            "\n- **Fake Review Detection:** Identify potentially fraudulent reviews using sentiment scoring."
-            "\n- **History Tracking:** Access previous scraping and analysis results for ongoing review and insight."
-            "\n\nWhether you're a business looking to improve your offerings, or a researcher studying consumer behavior, "
-            "SentimelyzeR provides the tools you need for effective sentiment analysis."
-        ), 
-        'sentiment detection': (
-            "### Upload Dataset\n"
-            "To upload a CSV dataset:\n"
-            "1. Make sure the CSV file contains the following columns: Id, ProductId, UserId, ProfileName, "
-            "HelpfulnessNumerator, HelpfulnessDenominator, Score, Time, Summary, Text.\n"
-            "2. Click 'UPLOAD DATASET' to analyze your reviews."
-        ),
-        'text analysis': (
-            "### Text Analysis\n"
-            "For sentiment analysis, enter the desired text in the provided area. You will receive the sentiment result, "
-            "indicating whether it is positive, negative, or neutral."
-        ),
-        'fake review detection': (
-            "### Fake Review Detection\n"
-            "1. Upload a CSV file containing reviews.\n"
-            "2. The system will identify potentially fake reviews based on ratings and content using NLP techniques.\n"
-            "3. Ensure the CSV file includes these essential columns: Id, ProductId, UserId, ProfileName, "
-            "HelpfulnessNumerator, HelpfulnessDenominator, Score, Time, Summary, Text."
-        ),
-        'history': (
-            "### History\n"
-            "You can access previously analyzed datasets. Here, you have options to view, filter, and download past reviews' "
-            "sentiment results in various formats."
-        ),
-        'support': (
-            "### Need Help?\n"
-            "If you have questions or need assistance with the following features, feel free to ask:\n"
-            "- Scrape Reviews\n"
-            "- sentiment Detection \n"
-            "- Text Analysis\n"
-            "- Fake Reviews Detection\n"
-            "For additional guidance, type 'Getting Started' for more information."
-        ),
-
-        'tutorial': (
-            "### Interactive Tutorial\n"
-            "This dashboard offers numerous functionalities:\n"
-            "1. Scraping reviews from Amazon.\n"
-            "2. Uploading datasets for custom analysis.\n"
-            "3. Conducting Text Analysis for any provided text.\n"
-            "Use the sidebar to navigate through various features of this dashboard!"
-        )
-    }
-
-    response = help_responses.get(prompt, 
-    "I'm sorry, but I didn't understand your question. You can ask about:\n- Scraping Reviews\n- Uploading Dataset\n- Performing Text Analysis\n- Detecting Fake Reviews\n"
-    "Or type 'help' for options and guidance.")
-    return response
-
-if st.session_state.page == "Support":
-    show_tutorial()
-    st.write("---")
-    chat_and_help_section()
-    
