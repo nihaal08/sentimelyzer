@@ -637,28 +637,44 @@ if st.session_state.page == "Dataset Upload":
 if st.session_state.page == "Text Analysis":
     st.header("ANALYZE CUSTOM TEXT")
     user_input_text = st.text_area("ENTER TEXT:")
-    
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        if st.button("Analyze in English"):
-            if user_input_text:
-                sentiment_result = analyze_sentiment(user_input_text)
-                st.write(f"*SENTIMENT OF TEXT:* {sentiment_result}")
-            else:
-                st.write("*PLEASE ENTER TEXT TO ANALYZE.*")
 
-    with col2:
-        if st.button("Analyze in Other Languages"):
-            if user_input_text:
+    language_option = st.selectbox("Select Language for Analysis:", ["English", "Other Language"])
+
+    if st.button("Analyze Text"):
+        if user_input_text:
+            if language_option == "English":
+                sentiment_result = analyze_sentiment(user_input_text)
+                explanation = ""
+                
+                if sentiment_result == 'Positive':
+                    explanation = "The text expresses positive sentiment likely due to the use of uplifting words and phrases, indicating a favorable perception."
+                elif sentiment_result == 'Negative':
+                    explanation = "The text conveys a negative sentiment, which may arise from the presence of critical or adverse vocabulary, suggesting dissatisfaction."
+                else:
+                    explanation = "The sentiment is neutral, signifying that the text lacks strong emotional indicators, often presenting a balanced view without bias."
+
+                st.write(f"*Sentiment of Text:* {sentiment_result}")
+                st.write(f"*Reason:* {explanation}")
+
+            elif language_option == "Other Language":
                 translated_text = translate_text(user_input_text)
+                sentiment_result = analyze_sentiment(translated_text)
+                explanation = ""
+                
+                if sentiment_result == 'Positive':
+                    explanation = "The translated text expresses positive sentiment likely due to the use of uplifting words and phrases, indicating a favorable perception."
+                elif sentiment_result == 'Negative':
+                    explanation = "The translated text conveys a negative sentiment, which may arise from the presence of critical or adverse vocabulary, suggesting dissatisfaction."
+                else:
+                    explanation = "The translated text has a neutral sentiment, signifying that it lacks strong emotional indicators, often presenting a balanced view without bias."
+
                 st.write("### TRANSLATED TEXT")
                 st.write(translated_text)
-                sentiment_result = analyze_sentiment(translated_text)
-                st.write(f"*SENTIMENT OF TRANSLATED TEXT:* {sentiment_result}")
-            else:
-                st.write("*PLEASE ENTER TEXT TO ANALYZE.*")
-
+                st.write(f"*Sentiment of Translated Text:* {sentiment_result}")
+                st.write(f"*Reason:* {explanation}")
+        else:
+            st.write("*Please enter text for analysis.*")
+            
 if st.session_state.page == "History":
     st.header("History of Reviews")
 
