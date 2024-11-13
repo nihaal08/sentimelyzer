@@ -8,20 +8,19 @@ from nltk.tokenize import word_tokenize
 from nltk.corpus import stopwords
 from nltk.stem import WordNetLemmatizer
 from nltk.sentiment import SentimentIntensityAnalyzer
+import matplotlib.pyplot as plt
 import plotly.express as px
 import plotly.graph_objects as go
 import sqlite3
-import matplotlib.pyplot as plt
 import nltk
 import asyncio
+from concurrent.futures import ThreadPoolExecutor
 from wordcloud import WordCloud
 from googletrans import Translator
-import logging
-
-logging.basicConfig(filename='app.log', level=logging.ERROR)
 
 st.set_page_config(layout="wide")
 
+nltk.download('punkt_tab', quiet=True)
 nltk.download('punkt', quiet=True)
 nltk.download('stopwords', quiet=True)
 nltk.download('wordnet', quiet=True)
@@ -38,16 +37,16 @@ def load_css():
             }
             h1, h2, h3, h4, h5, h6 {
                 color: brown;               
-                text-transform: uppercase;
+                text-transform: uppercase; 
             }
             .stSidebar {
                 background-color: black;  
                 color: #F5F5DC;   
                 text-align:center;
-                font-size:10px;
+                font-size:10px
             }
             .stButton > button {
-                background-color: #D2C9A3;   
+                background-color: brown;   
                 color: black;             
                 border: none;             
                 padding: 10px;           
@@ -57,13 +56,126 @@ def load_css():
                 text-align: center;      
                 font-size: 16px;         
             }
+            
             .stButton > button:hover {
-                background-color: brown;
-                color: #F5F5DC;
+                background-color: #F5F5DC;
+                color: black;
             }
         </style>
     """, unsafe_allow_html=True)
+
 load_css()
+
+# Initialize session state
+if "messages" not in st.session_state:
+    st.session_state.messages = []
+if 'page' not in st.session_state:
+    st.session_state.page = "Home"
+
+# Preprocessing Text Function
+def preprocess_text(text):
+    """ Preprocesses the given text by demojizing, cleaning, and tokenizing."""
+    text = emoji.demojize(text)  # Convert emojis to text
+    text = clean_text(text)  # Clean the text
+    tokens = word_tokenize(text.lower())  # Tokenize and lowercase
+    lem = WordNetLemmatizer()  # Initialize lemmatizer
+    cleaned_tokens = [lem.lemmatize(token) for token in tokens if token not in STOPWORDS]
+    return ' '.join(cleaned_tokens)  # Return cleaned tokens as a single string
+
+def clean_text(text):
+    """Cleans input text by removing unwanted characters."""
+    text = re.sub(r'[^\w\s]', '', text)
+    return re.sub(r'\s+', ' ', text).strip()
+
+def filter_unwanted_comments(reviews, unwanted_keywords):
+    """Filters out reviews containing any of the unwanted keywords."""
+    filtered_reviews = []
+    for review in reviews:
+        if not any(keyword in review['Description'].lower() for keyword in unwanted_keywords):
+            filtered_reviews.append(review)
+    return filtered_reviews
+
+def chat_and_help_section():
+    st.title("Chat & Help Assistant")
+    for message in st.session_state.messages:
+        with st.chat_message(message["role"]):
+            st.markdown(message["content"])
+
+    if prompt := st.chat_input("How can I assist you? (Type 'help' for options)"):
+        st.session_state.messages.append({"role": "user", "content": prompt})
+        with st.chat_message("user"):
+            st.markdown(prompt)
+
+        response = generate_response(prompt)
+        with st.chat_message("assistant"):
+            st.markdown(response)
+
+        st.session_state.messages.append({"role": "assistant", "content": response})
+
+def generate_response(prompt):
+    prompt = prompt.lower()  # Normalize input
+    help_responses = {
+        'scrape reviews': (
+            "### Scrape Reviews\n"
+            "To scrape reviews, please follow these steps:\n"
+            "1. Paste the Amazon product review URL.\n"
+            "2. Specify the number of pages to scrape.\n"
+            "3. Click the 'SCRAPE REVIEWS' button.\n"
+            "Make sure the URL leads to a valid product page with reviews!"
+        ),
+        'upload dataset': (
+            "### Upload Dataset\n"
+            "To upload a CSV dataset:\n"
+            "1. Ensure it contains the following columns: Id, ProductId, UserId, ProfileName, HelpfulnessNumerator, "
+            "HelpfulnessDenominator, Score, Time, Summary, Text.\n"
+            "2. Click 'UPLOAD DATASET' to analyze your reviews."
+        ),
+        'text analysis': (
+            "### Text Analysis\n"
+            "Simply enter the text you wish to analyze in the provided area. You'll receive sentiment results "
+            "for positive, negative, or neutral sentiment."
+        ),
+        'fake review detection': (
+            "### Fake Review Detection\n"
+            "1. Upload a CSV file that includes reviews.\n"
+            "2. The system will identify likely fake reviews based on ratings and content using NLP techniques.\n"
+            "3. Make sure the CSV file has these essential columns: category, rating, label, text_."
+        ),
+        'history': (
+            "### History\n"
+            "You can review all scraped and uploaded datasets here. Filter, download, and analyze past reviews’ "
+            "sentiments in various ways."
+        ),
+        'help': (
+            "### Need Help?\n"
+            "Ask me specific questions or request assistance about features like:\n"
+            "- Scrape reviews\n"
+            "- Upload datasets\n"
+            "- Analyze text\n"
+            "If you're unsure where to start, just type 'Getting Started' for tips!"
+        ),
+        'getting started': (
+            "### Getting Started\n"
+            "To kick off, you might want to:\n"
+            "1. Scrape some product reviews: Go to 'Scrape Reviews'.\n"
+            "2. Analyze your dataset: Try 'Upload Dataset'.\n"
+            "3. Check out 'Text Analysis' for sentiment on custom text!"
+        ),
+        'tutorial': (
+            "### Interactive Tutorial\n"
+            "This dashboard includes functionalities like:\n"
+            "1. Scrape reviews.\n"
+            "2. Upload datasets.\n"
+            "3. Text Analysis.\n"
+            "Feel free to navigate through the sidebar for access to various sections."
+        )
+    }
+
+    response = help_responses.get(prompt, 
+    "I didn’t understand your question. You can type:\n- Scrape Reviews\n- Upload Dataset\n- Text Analysis\n- Getting Started\n\n"
+    "Or type 'help' for options and guidance.")
+
+    return response
 
 def initialize_database(db_name, create_statement):
     try:
@@ -72,10 +184,11 @@ def initialize_database(db_name, create_statement):
         cursor.execute(create_statement)
         conn.commit()
     except Exception as e:
-        logging.error(f"Error initializing database {db_name}: {e}")
-        st.error("An error occurred while initializing the database.")
+        st.error(f"Error initializing database {db_name}: {e}")
     finally:
         conn.close()
+
+# Table creation statements
 initialize_database(
     'scraped_sentiment_analysis.db',
     '''
@@ -85,11 +198,12 @@ initialize_database(
         rating TEXT,
         title TEXT,
         description TEXT,
-        sentiment TEXT,
+        sentiment TEXT, 
         translated_description TEXT  
     )
     '''
 )
+
 initialize_database(
     'uploaded_sentiment_analysis.db',
     '''
@@ -109,6 +223,7 @@ initialize_database(
     )
     '''
 )
+
 initialize_database(
     'uploaded_output_analysis.db',
     '''
@@ -129,38 +244,13 @@ initialize_database(
     '''
 )
 
-if "messages" not in st.session_state:
-    st.session_state.messages = []
-if 'page' not in st.session_state:
-    st.session_state.page = "Home"
-
-def preprocess_text(text):
-    text = emoji.demojize(text)
-    text = clean_text(text)
-    tokens = word_tokenize(text.lower())
-    lemmatizer = WordNetLemmatizer()
-    cleaned_tokens = [lemmatizer.lemmatize(token) for token in tokens if token not in STOPWORDS]
-    return ' '.join(cleaned_tokens)
-
-def clean_text(text):
-    text = re.sub(r'[^\w\s]', '', text)
-    return re.sub(r'\s+', ' ', text).strip()
-
-def filter_unwanted_comments(reviews, unwanted_keywords):
-    filtered_reviews = []
-    for review in reviews:
-        if not any(keyword in review['Description'].lower() for keyword in unwanted_keywords):
-            filtered_reviews.append(review)
-    return filtered_reviews
-
 def translate_text(text):
     translator = Translator()
     try:
         translated = translator.translate(text, dest='en')
         return translated.text
     except Exception as e:
-        logging.error(f"Translation Error: {e}")
-        st.error("An error occurred during translation.")
+        st.error(f"Translation Error: {e}")
         return text
 
 def get_request_headers():
@@ -177,10 +267,8 @@ async def single_page_scrape(url, page_number, encountered_reviews):
         boxes = soup.select('div[data-hook="review"]')
 
         for box in boxes:
-            review_title = (box.select_one('[data-hook="review-title"]').text.strip() 
-                            if box.select_one('[data-hook="review-title"]') else 'N/A')
-            review_description = (box.select_one('[data-hook="review-body"]').text.strip() 
-                                  if box.select_one('[data-hook="review-body"]') else 'N/A')
+            review_title = box.select_one('[data-hook="review-title"]').text.strip() if box.select_one('[data-hook="review-title"]') else 'N/A'
+            review_description = box.select_one('[data-hook="review-body"]').text.strip() if box.select_one('[data-hook="review-body"]') else 'N/A'
             review_title = re.sub(r'\b\d+\.\d+\s+out of\s+\d+\s+stars\b', '', review_title, flags=re.IGNORECASE).strip()
             identifier = f"{review_title}_{review_description}"
 
@@ -190,8 +278,7 @@ async def single_page_scrape(url, page_number, encountered_reviews):
 
             review = {
                 'Name': box.select_one('[class="a-profile-name"]').text if box.select_one('[class="a-profile-name"]') else 'N/A',
-                'Rating': (box.select_one('[data-hook="review-star-rating"]').text.split(' out')[0] 
-                           if box.select_one('[data-hook="review-star-rating"]') else 'N/A'),
+                'Rating': box.select_one('[data-hook="review-star-rating"]').text.split(' out')[0] if box.select_one('[data-hook="review-star-rating"]') else 'N/A',
                 'Title': review_title,
                 'Description': clean_text(review_description),
             }
@@ -200,8 +287,7 @@ async def single_page_scrape(url, page_number, encountered_reviews):
 
             reviews.append(review)
     except requests.exceptions.RequestException as e:
-        logging.error(f"Error on page {page_number}: {e}")
-        st.error(f"An error occurred on page {page_number}. Please verify the URL or check your connection.")
+        st.error(f"Error on page {page_number}: {e}")
     return reviews
 
 async def scrape_reviews(url, pages):
@@ -222,6 +308,7 @@ async def scrape_reviews(url, pages):
 def analyze_sentiment(text):
     analyzer = SentimentIntensityAnalyzer()
     sentences = nltk.tokenize.sent_tokenize(text)
+
     overall_sentiment = 0
 
     for sentence in sentences:
@@ -241,9 +328,9 @@ def generate_insights(data):
     neutral_reviews = data[data['Sentiment'] == 'Neutral']
 
     insights = []
-    insights.append(f"{len(positive_reviews)} positive reviews identified.")
-    insights.append(f"{len(negative_reviews)} negative reviews identified.")
-    insights.append(f"{len(neutral_reviews)} neutral reviews identified.")
+    insights.append(f"{len(positive_reviews)} positive reviews found.")
+    insights.append(f"{len(negative_reviews)} negative reviews found.")
+    insights.append(f"{len(neutral_reviews)} neutral reviews found.")
     return insights
 
 def insert_scraped_review(name, rating, title, description, sentiment, translated_description):
@@ -256,8 +343,7 @@ def insert_scraped_review(name, rating, title, description, sentiment, translate
         ''', (name, rating, title, description, sentiment, translated_description))
         conn.commit()
     except Exception as e:
-        logging.error(f"Error inserting review into scraped_reviews: {e}")
-        st.error("An error occurred while inserting the scraped review.")
+        st.error(f"Error inserting review into scraped_reviews: {e}")
     finally:
         conn.close()
 
@@ -274,88 +360,49 @@ def insert_uploaded_output_review(product_id, user_id, profile_name, helpfulness
               score, time, summary, text, processed_text, sentiment))
         conn.commit()
     except Exception as e:
-        logging.error(f"Error inserting review into output_reviews: {e}")
-        st.error("An error occurred while inserting the uploaded review.")
+        st.error(f"Error inserting review into output_reviews: {e}")
     finally:
         conn.close()
 
 def fetch_all_reviews(table_name):
-    db_name = 'scraped_sentiment_analysis.db' if 'scraped' in table_name else 'uploaded_output_analysis.db'
+    if 'scraped' in table_name:
+        db_name = 'scraped_sentiment_analysis.db'
+    else:
+        db_name = 'uploaded_output_analysis.db'
+
     try:
         conn = sqlite3.connect(db_name)
         cursor = conn.cursor()
         cursor.execute(f'SELECT * FROM {table_name}')
         data = cursor.fetchall()
     except Exception as e:
-        logging.error(f"Error fetching reviews from {table_name}: {e}")
-        st.error(f"An error occurred while fetching reviews from {table_name}.")
+        st.error(f"Error fetching reviews from {table_name}: {e}")
         return []
     finally:
         conn.close()
     return data
 
 def clear_database(table_name):
-    db_name = 'scraped_sentiment_analysis.db' if 'scraped' in table_name else 'uploaded_output_analysis.db'
+    """Clear all entries from the specified database table."""
+    if 'scraped' in table_name:
+        db_name = 'scraped_sentiment_analysis.db'
+    else:
+        db_name = 'uploaded_output_analysis.db'
+
     try:
         conn = sqlite3.connect(db_name)
         cursor = conn.cursor()
         cursor.execute(f'DELETE FROM {table_name}') 
         conn.commit()
-        st.success(f"All entries in {table_name} have been successfully cleared.")
+        st.success(f"All entries in {table_name} have been cleared.")
     except Exception as e:
-        logging.error(f"Error clearing {table_name}: {e}")
-        st.error(f"An error occurred while clearing {table_name}.")
+        st.error(f"Error clearing {table_name}: {e}")
     finally:
         conn.close()
 
 def export_to_csv(data, filename):
     csv = data.to_csv(index=False)
     st.download_button(label="Download Results as CSV", data=csv, file_name=filename, mime='text/csv')
-
-
-def display_navbar():
-    st.sidebar.write("") 
-    st.sidebar.image('sentimelyzer.png', use_column_width=True)
-    st.sidebar.write("") 
-    st.sidebar.write("") 
-
-    pages = [
-        ("Home", "Home"),
-        ("About", "About"),
-        ("Sentiment Detection", "Dataset Upload"),
-        ("Fake Review Detection", "Fake Review Detection"),
-        ("Scrape Reviews", "Scrape Reviews"),
-        ("Text Analysis", "Text Analysis"),
-        ("History", "History"),
-        ("Support", "Support"),
-    ]
-
-    for page_name, page_key in pages:
-        if st.sidebar.button(page_name, key=f"{page_key.lower().replace(' ', '_')}_button"):
-            st.session_state.page = page_key
-
-display_navbar()
-
-if st.session_state.page == "Home":
-    st.markdown("""
-        <h1 style="text-align: center;"> </h1>
-        <h1 style="text-align: center;"> </h1>
-        <h1 style="text-align: center;">Welcome To SentimelyzeR</h1>
-        <h3 style="text-align: center;">Your Gateway to Understanding Sentiments</h3>
-    """, unsafe_allow_html=True)
-if st.session_state.page == "About":
-    st.title("About")
-    st.markdown("""
-        Sentimelyzer is a powerful tool designed for analyzing Amazon product reviews and extracting customer sentiment. 
-        It offers features such as scraping reviews from URLs, uploading CSV datasets for analysis, and evaluating custom text inputs for sentiment. 
-        Interactive visualizations facilitate data trend interpretation, empowering businesses to enhance their offerings based on authentic feedback.
-    """)
-    st.write("### Features of SentimelyzeR:")
-    st.write("- **Scrape Reviews:** Quickly gather reviews from Amazon products.")
-    st.write("- **Upload Dataset:** Analyze your own product review CSV files.")
-    st.write("- **Text Analysis:** Evaluate the sentiment of any provided text.")
-    st.write("- **Fake Review Detection:** Identify potentially fraudulent reviews using advanced NLP techniques.")
-    st.write("- **History:** Access previous analyses and results.")
 
 def show_tutorial():
     st.subheader("Interactive Tutorial")
@@ -366,124 +413,68 @@ def show_tutorial():
     - **Text Analysis**: Input custom text to understand sentiment.
     - **Scrape Reviews**: Collect Amazon product reviews with ease.
     - **Fake Review Detection**: Identify potentially fake reviews from your dataset using NLP.
-    - **History**: Review past analyses and results.
+    - **History**: View past analyses and results for comparison.
     
     **Explore More** using the sidebar to navigate through the features of this dashboard!
     """)
     st.markdown("### Quick Tips:")
-    st.markdown("- Utilize the clear buttons in History for database management.")
-    st.markdown("- Visualizations enable clear insights into data trends and sentiments.")
+    st.markdown("- Use the clear buttons in History to manage your databases.")
+    st.markdown("- Visualizations provide clear insights into data trends and sentiments.")
+
+def display_navbar():
+    st.sidebar.write("") 
+    st.sidebar.image('sentimelyzer.png', use_column_width=True)
+    st.sidebar.write("") 
+    st.sidebar.write("") 
+    if st.sidebar.button("Home", key="home_button"):
+        st.session_state.page = "Home"
+    if st.sidebar.button("About", key="about_button"):
+        st.session_state.page = "About"
+    if st.sidebar.button("Text Analysis", key="text_analysis_button"):
+        st.session_state.page = "Text Analysis"
+    if st.sidebar.button("Upload Dataset", key="dataset_upload_button"):
+        st.session_state.page = "Dataset Upload"
+    if st.sidebar.button("Scrape Reviews", key="scrape_reviews_button"):
+        st.session_state.page = "Scrape Reviews"
+    if st.sidebar.button("Fake Review Detection", key="fake_review_button"):
+        st.session_state.page = "Fake Review Detection"
+    if st.sidebar.button("History", key="history_button"):
+        st.session_state.page = "History"
+    if st.sidebar.button("Support", key="support_button"):
+        st.session_state.page = "Support"
+
+display_navbar()
+
+if st.session_state.page == "Home":
+    st.write("")
+    st.write("")
+    st.write("")
+    st.write("")
+    st.markdown("""
+        <h1 style="text-align: center;">Welcome To SentimelyzeR</h1>
+        <h3 style="text-align: center;">Your Gateway to Understanding Sentiments</h3>
+    """, unsafe_allow_html=True)
+
+if st.session_state.page == "About":
+    st.title("About")
+    st.markdown("""
+        Sentimelyzer is your go-to tool for effortlessly analyzing Amazon product reviews to uncover customer sentiment. 
+        With features like scraping reviews directly from Amazon URLs, uploading your own CSV datasets for analysis, and 
+        evaluating custom text inputs, you can gain valuable insights into consumer opinions. 
+        Our interactive visualizations make it easy to interpret data trends and improve your product offerings based on real feedback.
+    """)
+    st.write("### Features of SentimelyzeR:")
+    st.write("- **Scrape Reviews:** Instantly gather reviews from Amazon products.")
+    st.write("- **Upload Dataset:** Analyze your own CSV files containing product reviews.")
+    st.write("- **Text Analysis:** Understand the sentiment of any text you provide.")
+    st.write("- **Fake Review Detection:** Identify potentially fake reviews using NLP.")
+    st.write("- **History:** Access your previous analyses and results.")
     
-def chat_and_help_section():
-    st.title("Chat & Help Assistant")
-    for message in st.session_state.messages:
-        with st.chat_message(message["role"]):
-            st.markdown(message["content"])
-
-    if prompt := st.chat_input("How may I assist you? (Type 'help' for options)"):
-        st.session_state.messages.append({"role": "user", "content": prompt})
-        with st.chat_message("user"):
-            st.markdown(prompt)
-
-        response = generate_response(prompt)
-        with st.chat_message("assistant"):
-            st.markdown(response)
-
-        st.session_state.messages.append({"role": "assistant", "content": response})
-
-
-def generate_response(prompt):
-    prompt = prompt.lower()  
-    help_responses = {
-        'scrape reviews': (
-            "### Scrape Reviews\n"
-            "To scrape reviews, follow these steps:\n"
-            "1. Enter the Amazon review URL.\n"
-            "2. Specify the number of pages you want to scrape.\n"
-            "3. Click the 'SCRAPE REVIEWS' button.\n"
-            "Ensure that the URL leads to a product page containing reviews."
-        ),
-       'help': (
-            "Ask me specific questions or request assistance about features like:\n"
-            "- Scrape reviews\n"
-            "- Sentiment Detection\n"
-            "- Analyze text\n"
-            "If you're unsure where to start, just type 'Getting Started' for tips!"
-        ),
-        'getting started': (
-            "### Getting Started\n"
-            "To kick off, you might want to:\n"
-            "1. Scrape some product reviews: Go to 'Scrape Reviews'.\n"
-            "2. Analyze The Sentiments in your dataset: Try 'Sentiment Detection'.\n"
-            "3. Check out 'Text Analysis' for sentiment on custom text!"
-        ),
-        'about': (
-            "### About SentimelyzeR\n"
-            "SentimelyzeR is a powerful sentiment analysis tool specifically designed for analyzing product reviews from platforms like Amazon. "
-            "With this application, users can effortlessly scrape reviews, upload their datasets for analysis, and understand customer sentiments through advanced Natural Language Processing (NLP) techniques. "
-            "\n\n**Key Features Include:**"
-            "\n- **Scrape Reviews:** Gather Amazon product reviews quickly by entering the product URL."
-            "\n- **Upload Dataset:** Analyze your own CSV files to gain insights into sentiment trends."
-            "\n- **Text Analysis:** Evaluate the sentiment of custom text inputs to understand their emotional tone."
-            "\n- **Fake Review Detection:** Identify potentially fraudulent reviews using sentiment scoring."
-            "\n- **History Tracking:** Access previous scraping and analysis results for ongoing review and insight."
-            "\n\nWhether you're a business looking to improve your offerings, or a researcher studying consumer behavior, "
-            "SentimelyzeR provides the tools you need for effective sentiment analysis."
-        ), 
-        'sentiment detection': (
-            "### Upload Dataset\n"
-            "To upload a CSV dataset:\n"
-            "1. Make sure the CSV file contains the following columns: Id, ProductId, UserId, ProfileName, "
-            "HelpfulnessNumerator, HelpfulnessDenominator, Score, Time, Summary, Text.\n"
-            "2. Click 'UPLOAD DATASET' to analyze your reviews."
-        ),
-        'text analysis': (
-            "### Text Analysis\n"
-            "For sentiment analysis, enter the desired text in the provided area. You will receive the sentiment result, "
-            "indicating whether it is positive, negative, or neutral."
-        ),
-        'fake review detection': (
-            "### Fake Review Detection\n"
-            "1. Upload a CSV file containing reviews.\n"
-            "2. The system will identify potentially fake reviews based on ratings and content using NLP techniques.\n"
-            "3. Ensure the CSV file includes these essential columns: Id, ProductId, UserId, ProfileName, "
-            "HelpfulnessNumerator, HelpfulnessDenominator, Score, Time, Summary, Text."
-        ),
-        'history': (
-            "### History\n"
-            "You can access previously analyzed datasets. Here, you have options to view, filter, and download past reviews' "
-            "sentiment results in various formats."
-        ),
-        'support': (
-            "### Need Help?\n"
-            "If you have questions or need assistance with the following features, feel free to ask:\n"
-            "- Scrape Reviews\n"
-            "- sentiment Detection \n"
-            "- Text Analysis\n"
-            "- Fake Reviews Detection\n"
-            "For additional guidance, type 'Getting Started' for more information."
-        ),
-
-        'tutorial': (
-            "### Interactive Tutorial\n"
-            "This dashboard offers numerous functionalities:\n"
-            "1. Scraping reviews from Amazon.\n"
-            "2. Uploading datasets for custom analysis.\n"
-            "3. Conducting Text Analysis for any provided text.\n"
-            "Use the sidebar to navigate through various features of this dashboard!"
-        )
-    }
-
-    response = help_responses.get(prompt, 
-    "I'm sorry, but I didn't understand your question. You can ask about:\n- Scraping Reviews\n- Uploading Dataset\n- Performing Text Analysis\n- Detecting Fake Reviews\n"
-    "Or type 'help' for options and guidance.")
-    return response
-
 if st.session_state.page == "Support":
     show_tutorial()
     st.write("---")
     chat_and_help_section()
-    
+
 if st.session_state.page == "Scrape Reviews":
     st.header("SCRAPE REVIEWS FROM AMAZON")
     url_input = st.text_input("ENTER AMAZON REVIEW URL:")
@@ -570,7 +561,7 @@ if st.session_state.page == "Scrape Reviews":
                 for insight in insights:
                     st.write(insight)
             else:
-                st.write("*No reviews found during scraping.*")
+                st.write("*NO REVIEWS FOUND DURING SCRAPING.*")
 
 if st.session_state.page == "Dataset Upload":
     st.header("UPLOAD DATASET")
@@ -595,7 +586,7 @@ if st.session_state.page == "Dataset Upload":
                                               row['Score'], row['Time'], row['Summary'], 
                                               row['Text'], row['Processed_Text'], row['Sentiment'])
 
-            st.success("Data successfully uploaded and inserted into the output database.")
+            st.success("DATA UPLOADED AND INSERTED INTO OUTPUT DATABASE!")
 
             export_to_csv(data, "uploaded_reviews.csv")
 
@@ -607,7 +598,7 @@ if st.session_state.page == "Dataset Upload":
                                                                 "Score", "Time", "Summary", "Text", "Processed_Text", "Sentiment"])
                 st.write(db_df)
             else:
-                st.write("*No records found in the output database.*")
+                st.write("*NO RECORDS FOUND IN THE OUTPUT DATABASE.*")
 
             st.write("### SENTIMENT DISTRIBUTION")
             sentiment_counts = data['Sentiment'].value_counts()
@@ -641,52 +632,37 @@ if st.session_state.page == "Dataset Upload":
             for insight in insights:
                 st.write(insight)
         else:
-            st.write("*Uploaded CSV must contain the following columns: Id, ProductId, UserId, ProfileName, HelpfulnessNumerator, HelpfulnessDenominator, Score, Time, Summary, Text.*")
+            st.write("*UPLOADED CSV MUST CONTAIN THE FOLLOWING COLUMNS: Id, ProductId, UserId, ProfileName, HelpfulnessNumerator, HelpfulnessDenominator, Score, Time, Summary, Text.*")
 
 if st.session_state.page == "Text Analysis":
     st.header("ANALYZE CUSTOM TEXT")
     user_input_text = st.text_area("ENTER TEXT:")
-
-    language_option = st.selectbox("Select Language for Analysis:", ["English", "Other Language"])
-
-    if st.button("Analyze Text"):
-        if user_input_text:
-            if language_option == "English":
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        if st.button("Analyze in English"):
+            if user_input_text:
                 sentiment_result = analyze_sentiment(user_input_text)
-                explanation = ""
-                
-                if sentiment_result == 'Positive':
-                    explanation = "The text expresses positive sentiment likely due to the use of uplifting words and phrases, indicating a favorable perception."
-                elif sentiment_result == 'Negative':
-                    explanation = "The text conveys a negative sentiment, which may arise from the presence of critical or adverse vocabulary, suggesting dissatisfaction."
-                else:
-                    explanation = "The sentiment is neutral, signifying that the text lacks strong emotional indicators, often presenting a balanced view without bias."
+                st.write(f"*SENTIMENT OF TEXT:* {sentiment_result}")
+            else:
+                st.write("*PLEASE ENTER TEXT TO ANALYZE.*")
 
-                st.write(f"*Sentiment of Text:* {sentiment_result}")
-                st.write(f"*Reason:* {explanation}")
-
-            elif language_option == "Other Language":
+    with col2:
+        if st.button("Analyze in Other Languages"):
+            if user_input_text:
                 translated_text = translate_text(user_input_text)
-                sentiment_result = analyze_sentiment(translated_text)
-                explanation = ""
-                
-                if sentiment_result == 'Positive':
-                    explanation = "The translated text expresses positive sentiment likely due to the use of uplifting words and phrases, indicating a favorable perception."
-                elif sentiment_result == 'Negative':
-                    explanation = "The translated text conveys a negative sentiment, which may arise from the presence of critical or adverse vocabulary, suggesting dissatisfaction."
-                else:
-                    explanation = "The translated text has a neutral sentiment, signifying that it lacks strong emotional indicators, often presenting a balanced view without bias."
-
                 st.write("### TRANSLATED TEXT")
                 st.write(translated_text)
-                st.write(f"*Sentiment of Translated Text:* {sentiment_result}")
-                st.write(f"*Reason:* {explanation}")
-        else:
-            st.write("*Please enter text for analysis.*")
-                
+                sentiment_result = analyze_sentiment(translated_text)
+                st.write(f"*SENTIMENT OF TRANSLATED TEXT:* {sentiment_result}")
+            else:
+                st.write("*PLEASE ENTER TEXT TO ANALYZE.*")
+
 if st.session_state.page == "History":
     st.header("History of Reviews")
 
+    # Display scraped reviews
     st.subheader("Scraped Reviews")
     scraped_reviews = fetch_all_reviews('scraped_reviews')
     
@@ -695,8 +671,9 @@ if st.session_state.page == "History":
         st.write("### ALL SCRAPED REVIEWS")
         st.write(df_scraped)
     else:
-        st.write("*No scraped reviews found.*")
+        st.write("*NO SCRAPED REVIEWS FOUND.*")
 
+    # Display uploaded output reviews
     st.subheader("Uploaded Output Reviews")
     uploaded_output_reviews = fetch_all_reviews('output_reviews')
     
@@ -707,43 +684,50 @@ if st.session_state.page == "History":
         st.write("### ALL UPLOADED OUTPUT REVIEWS")
         st.write(df_uploaded_output)
     else:
-        st.write("*No uploaded output reviews found.*")
+        st.write("*NO UPLOADED OUTPUT REVIEWS FOUND.*")
 
     if st.button("Clear Scraped Reviews Database"):
-        clear_database('scraped_reviews')  
+        clear_database('scraped_reviews')  # Use the table name
 
     if st.button("Clear Uploaded Output Reviews Database"):
-        clear_database('output_reviews')  
+        clear_database('output_reviews')  # Use the table name
 
 if st.session_state.page == "Fake Review Detection":
     st.title("Fake Review Detection")
-    st.header("Upload Reviews for Fraud Identification")
+    st.header("Upload Reviews for Fake Review Identification")
 
     fake_review_uploaded_file = st.file_uploader("CHOOSE A CSV FILE WITH REVIEWS", type="csv")
     
     if fake_review_uploaded_file is not None:
+        # Read the uploaded file
         fake_reviews_data = pd.read_csv(fake_review_uploaded_file)
 
         st.write("### UPLOADED REVIEWS")
         st.write(fake_reviews_data)
 
+        # Required columns
         required_columns = ['Id', 'ProductId', 'UserId', 'ProfileName', 
                             'HelpfulnessNumerator', 'HelpfulnessDenominator', 
                             'Score', 'Time', 'Summary', 'Text']
         
+        # Check if all required columns are present
         if all(col in fake_reviews_data.columns for col in required_columns):
+            # Initialize Sentiment Analyzer
             sia = SentimentIntensityAnalyzer()
-
+            
+            # Function to analyze sentiment and classify as Fake/Real
             def classify_fake_reviews(row):
-                sentiment_score = sia.polarity_scores(row['Text'])['compound']
+                sentiment_score = sia.polarity_scores(row['Text'])['compound']  # Analyze based on the 'Text' column
                 rating = float(row['Score'])
                 
+                # Fake logic: Low rating with a positive sentiment score
                 if rating < 3 and sentiment_score >= 0.05:
                     return 'Fake'
                 elif rating >= 3:
                     return 'Real'
                 return 'Uncertain'
 
+            # Apply the function and create a new column
             fake_reviews_data['Is_Fake'] = fake_reviews_data.apply(classify_fake_reviews, axis=1)
 
             st.write("#### Fake Review Detection Results")
@@ -751,23 +735,22 @@ if st.session_state.page == "Fake Review Detection":
                                               'Score', 'Text', 'Is_Fake']].copy()
             st.write(results_df)
 
+            # Count of each category
             fake_count = fake_reviews_data[fake_reviews_data['Is_Fake'] == 'Fake'].shape[0]
             real_count = fake_reviews_data[fake_reviews_data['Is_Fake'] == 'Real'].shape[0]
             uncertain_count = fake_reviews_data[fake_reviews_data['Is_Fake'] == 'Uncertain'].shape[0]
 
             st.write("### ANALYSIS INSIGHTS")
             st.write(f"Total Reviews: {len(fake_reviews_data)}")
-            st.write(f"Fraudulent Reviews Detected: {fake_count}")
-            st.write(f"Genuine Reviews Detected: {real_count}")
-            st.write(f"Ambiguous Reviews: {uncertain_count}")
+            st.write(f"Fake Reviews Detected: {fake_count}")
+            st.write(f"Real Reviews Detected: {real_count}")
+            st.write(f"Uncertain Reviews: {uncertain_count}")
 
-            fig = px.pie(names=['Fake', 'Real', 'Uncertain'], 
-                          values=[fake_count, real_count, uncertain_count],
-                          title='Distribution of Fake vs Real Reviews',
-                          color_discrete_sequence=['green', 'red', 'yellow'])
+            # Pie chart of results
+            fig = px.pie(names=['Fake', 'Real', 'Uncertain'], values=[fake_count, real_count, uncertain_count],
+                         title='Distribution of Fake vs Real Reviews',
+                         color_discrete_sequence=['green', 'red', 'yellow'])
             st.plotly_chart(fig)
 
         else:
-            st.write("*Uploaded CSV must contain the following columns: Id, ProductId, UserId, ProfileName, HelpfulnessNumerator, HelpfulnessDenominator, Score, Time, Summary, Text.*")
-            
-            
+            st.write("*UPLOADED CSV MUST CONTAIN THE FOLLOWING COLUMNS: Id, ProductId, UserId, ProfileName, HelpfulnessNumerator, HelpfulnessDenominator, Score, Time, Summary, Text.*")
