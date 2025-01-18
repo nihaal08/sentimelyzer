@@ -423,7 +423,7 @@ def show_tutorial():
 
 def display_navbar():
     st.sidebar.write("") 
-    st.sidebar.image('sentimelyzer.png', use_column_width=True)
+    st.sidebar.image('sentimelyzer.png', use_container_width=True)
     st.sidebar.write("") 
     st.sidebar.write("") 
     if st.sidebar.button("Home", key="home_button"):
