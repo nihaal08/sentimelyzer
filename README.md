@@ -1,104 +1,66 @@
-# SentimelyzeR
+# SentimentSnap - AI Sentiment Analysis
 
-## Overview
+## 📌 Overview
+**SentimentSnap** is an AI-powered sentiment analysis application built with **Streamlit**. It can analyze text sentiment, translate non-English text, and classify the sentiment as **Positive, Negative, or Neutral**. The app leverages **Natural Language Processing (NLP)** and **Machine Learning** for high-accuracy sentiment detection.
 
-SentimelyzeR is an interactive dashboard for sentiment analysis, primarily focused on analyzing Amazon product reviews. It offers functionalities such as scraping reviews directly from Amazon URLs, uploading custom datasets in CSV format for sentiment analysis, and evaluating sentiment from user-provided text. The application uses Natural Language Processing (NLP) techniques and provides visualizations to aid users in understanding sentiment trends and insights derived from the reviews.
+## 🚀 Features
+- ✅ **Text Sentiment Analysis** (Positive, Negative, Neutral)
+- ✅ **Multilingual Support** with automatic translation (via Google Translate)
+- ✅ **Text Preprocessing** (Stopword removal, Lemmatization, Cleaning)
+- ✅ **Confidence Score & Probability Distribution**
+- ✅ **Simple & Interactive UI with Streamlit**
 
-## Features
-
-- **Scrape Reviews:** Instantly gather reviews from Amazon products via URLs.
-- **Upload Dataset:** Analyze your own CSV files containing product reviews for sentiment analysis.
-- **Text Analysis:** Input custom text to analyze and understand sentiment dynamics.
-- **Fake Review Detection:** Identify potentially fake reviews using NLP and sentiment analysis techniques.
-- **Sentiment Distribution Visualization:** Visualize sentiment distribution using pie charts and bar graphs.
-- **Interactive Word Cloud:** Generate word clouds for positive and negative reviews to visualize common terms.
-- **History:** Access previously scraped and uploaded reviews with filtering options.
-- **Chat & Help Assistant:** An interactive assistant to guide users in using the dashboard features.
-
-## Getting Started
-
-### Prerequisites
-
-- Python 3.x
-- Required libraries (installed via `pip`):
-    ```bash
-    pip install streamlit pandas requests beautifulsoup4 nltk matplotlib plotly sqlite3 wordcloud googletrans
-    ```
-
-### Running the Application
-
-To run the SentimelyzeR dashboard:
-
-1. Clone the repository:
-    ```bash
-    git clone https://github.com/yourusername/sentimelyzer.git
-    cd sentimelyzer
-    ```
-
-2. Start the Streamlit server:
-    ```bash
-    streamlit run app.py
-    ```
-
-3. Open your web browser and navigate to `http://localhost:8501`.
-
-## User Guide
-
-### Scraping Reviews
-
-1. Navigate to the "Scrape Reviews" section.
-2. Enter the Amazon product review URL and the number of pages to scrape.
-3. Click the "SCRAPE REVIEWS" button to start scraping. The resulting reviews will be displayed with sentiment analysis results.
-
-### Uploading Dataset
-
-1. Go to the "Upload Dataset" section.
-2. Upload a CSV file that contains the necessary columns.
-3. The uploaded data will be processed, and sentiment analysis will be performed.
-
-### Analyzing Custom Text
-
-1. Navigate to the "Text Analysis" section.
-2. Input any text you wish to analyze.
-3. Select the language for analysis (English or other) and click the "Analyze Text" button.
-
-### Fake Review Detection
-
-1. Visit the "Fake Review Detection" section.
-2. Upload a CSV file with reviews to analyze their authenticity.
-3. Results will display which reviews are classified as fake, real, or uncertain.
-
-### History
-
-- In the "History" section, you can view all past analyses and results, with options to clear databases.
-
-## Development
-
-### Directory Structure
-
+## 📂 Project Structure
 ```
-sentimelyzer/
-│
-├── app.py                   # Main application file
-├── requirements.txt          # Required libraries
-└── sentimelyzer.png         # Application logo
+SentimentSnap/
+│-- sentiment_model.joblib       # Pre-trained ML model
+│-- tfidf_vectorizer.joblib      # TF-IDF vectorizer
+│-- app.py                       # Streamlit app
+│-- requirements.txt             # Required dependencies
+│-- README.md                    # Documentation
 ```
 
-### Database Initialization
+## 🛠 Installation & Setup
+### **1️⃣ Clone the Repository**
+```bash
+git clone https://github.com/yourusername/SentimentSnap.git
+cd SentimentSnap
+```
 
-The application initializes three SQLite databases to store scraped reviews, uploaded analyses, and outputs. Ensure the appropriate permissions are set to allow database reading/writing.
+### **2️⃣ Create a Virtual Environment (Optional but Recommended)**
+```bash
+python -m venv venv
+source venv/bin/activate   # For macOS/Linux
+venv\Scripts\activate      # For Windows
+```
 
-### Acknowledgments
+### **3️⃣ Install Dependencies**
+```bash
+pip install -r requirements.txt
+```
 
-- **NLTK & VADER:** For natural language processing and sentiment analysis.
-- **BeautifulSoup:** For parsing HTML and web scraping.
-- **Plotly & Matplotlib:** For generating visualizations.
-- **WordCloud:** For creating word clouds based on text inputs.
+### **4️⃣ Run the Application**
+```bash
+streamlit run app.py
+```
 
-## License
+## 🎯 How to Use
+1. Enter text in the input box.
+2. Click on **Analyze Sentiment**.
+3. The app will **translate (if needed), clean, and classify** the text.
+4. View **sentiment results, confidence scores, and probability bars**.
 
-This project is licensed under the MIT License.
+## 🔧 Technologies Used
+- **Python** (NLTK, Scikit-learn, BeautifulSoup, Joblib)
+- **Streamlit** (UI Framework)
+- **Google Translate API** (Language Detection & Translation)
+
+## ⚠️ Disclaimer
+🚀 *This AI-powered sentiment analysis tool is for educational purposes only. The results may not always be 100% accurate, and users should interpret them with discretion.*
+
+## 📌 Author
+- **[Mohamed Nihal]** – *ML Engineer*
 
 ---
+⭐ *If you like this project, don't forget to star ⭐ the repository!*
 
-For questions or feedback, please reach out via the repository's issues page or through contact details provided in the project documentation. Happy coding!
