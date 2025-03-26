@@ -422,10 +422,6 @@ def show_tutorial():
     st.markdown("- Visualizations provide clear insights into data trends and sentiments.")
 
 def display_navbar():
-    st.sidebar.write("") 
-    st.sidebar.image('sentimelyzer.png', use_container_width=True)
-    st.sidebar.write("") 
-    st.sidebar.write("") 
     if st.sidebar.button("Home", key="home_button"):
         st.session_state.page = "Home"
     if st.sidebar.button("About", key="about_button"):
