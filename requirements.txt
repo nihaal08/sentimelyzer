@@ -1,11 +1,8 @@
 streamlit
-pandas
-requests
+joblib
 beautifulsoup4
-emoji
 nltk
-matplotlib
-plotly
-wordcloud
-googletrans==4.0.0-rc1  # Translator module may need googletrans==4.0.0-rc1
-lxml
+googletrans==4.0.0-rc1
+scikit-learn
+pandas
+nump
